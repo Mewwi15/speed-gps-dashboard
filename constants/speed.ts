@@ -72,3 +72,28 @@ export function speedLegend(gaugeMax: number) {
     label: Math.round((gaugeMax / (SPEED_RAMP.length - 1)) * i).toString(),
   }));
 }
+
+/**
+ * Formats a coordinate with its hemisphere. The readout used to print "N" and
+ * "E" unconditionally, so anywhere west of Greenwich or south of the equator
+ * was labelled wrongly.
+ */
+export function formatLatitude(latitude: number) {
+  return `${Math.abs(latitude).toFixed(4)}\u00b0 ${latitude >= 0 ? "N" : "S"}`;
+}
+
+export function formatLongitude(longitude: number) {
+  return `${Math.abs(longitude).toFixed(4)}\u00b0 ${longitude >= 0 ? "E" : "W"}`;
+}
+
+/**
+ * Speeds below this read as stationary, filtering the jitter GPS reports at
+ * rest. A single 1 m/s floor suited cars but erased walking and jogging
+ * entirely, so the floor follows the vehicle.
+ */
+export const SPEED_FLOOR_MPS: Record<Mode, number> = {
+  Car: 1,
+  Moto: 1,
+  Bike: 0.4,
+  Run: 0.3,
+};

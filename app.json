@@ -10,7 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.mew.speedgps",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleLocalizations": [
+          "en"
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {

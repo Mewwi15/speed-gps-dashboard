@@ -9,6 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { SPEED_FLOOR_MPS } from "@/constants/speed";
+import useSettings from "@/contexts/SettingsContext";
 import {
   createDriveState,
   DEMO_TICK_MS,
@@ -48,6 +50,8 @@ export type LocationValue = {
   /** True while synthetic fixes are driving the app instead of the GPS. */
   isDemo: boolean;
   setDemo: (on: boolean) => void;
+  /** Asks for location again after the user has changed their mind. */
+  retryPermission: () => void;
   /** "auto" replays the scripted drive; "manual" follows the throttle. */
   demoMode: DemoMode;
   setDemoMode: (mode: DemoMode) => void;
@@ -93,6 +97,9 @@ type Fix = {
  * and give each screen its own top/average speed.
  */
 export function LocationProvider({ children }: { children: ReactNode }) {
+  // Mounted inside SettingsProvider, so the noise floor can follow the vehicle:
+  // a threshold that makes sense for a car would erase a jogger entirely.
+  const { mode } = useSettings();
   const [speed, setSpeed] = useState<number>(0);
   const [topSpeed, setTopSpeed] = useState<number>(0);
   const [avgSpeed, setAvgSpeed] = useState<number>(0);
@@ -107,6 +114,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [peakPoint, setPeakPoint] = useState<TrackPoint | null>(null);
   const [distanceM, setDistanceM] = useState<number>(0);
   const [isDemo, setIsDemo] = useState<boolean>(false);
+  const [permissionAttempt, setPermissionAttempt] = useState<number>(0);
   const [demoMode, setDemoMode] = useState<DemoMode>("auto");
   const [manualSpeed, setManualSpeed] = useState<number>(0);
 
@@ -117,6 +125,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const distanceSoFar = useRef(0);
   const lastAppendedPoint = useRef<TrackPoint | null>(null);
   const latestPosition = useRef({ latitude: 0, longitude: 0 });
+  const speedFloor = useRef(SPEED_FLOOR_MPS.Car);
+  speedFloor.current = SPEED_FLOOR_MPS[mode];
   const manualSpeedRef = useRef(0);
   manualSpeedRef.current = manualSpeed;
   const demoModeRef = useRef<DemoMode>("auto");
@@ -126,7 +136,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const ingest = useCallback((fix: Fix) => {
     const speedMps = Math.max(fix.speedMps, 0);
     let currentSpeedKmh = 0;
-    if (speedMps >= 1.0) {
+    if (speedMps >= speedFloor.current) {
       currentSpeedKmh = Math.round(speedMps * 3.6);
     }
 
@@ -217,9 +227,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== "granted") {
-          setErrorMsg("Permission denied");
+          setErrorMsg("Location access is off");
           return;
         }
+        setErrorMsg(null);
         if (cancelled) return;
 
         subscriber = await Location.watchPositionAsync(
@@ -251,7 +262,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       if (subscriber) subscriber.remove();
     };
-  }, [isDemo, ingest, refreshAddress]);
+  }, [isDemo, ingest, refreshAddress, permissionAttempt]);
 
   // Demo drive. Both modes follow the same real Bangkok route; the scripted
   // run takes its speed from each road, while hand-driving takes it from the
@@ -270,6 +281,11 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(timer);
   }, [isDemo, ingest]);
+
+  const retryPermission = useCallback(() => {
+    setErrorMsg(null);
+    setPermissionAttempt((attempt) => attempt + 1);
+  }, []);
 
   const setDemo = useCallback((on: boolean) => {
     // Start each demo from a clean slate so the stats read as one drive.
@@ -313,6 +329,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       distanceM,
       isDemo,
       setDemo,
+      retryPermission,
       demoMode,
       setDemoMode,
       manualSpeed,

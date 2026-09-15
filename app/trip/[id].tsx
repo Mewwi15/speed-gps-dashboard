@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RouteMap, { type RouteMapHandle } from "@/components/RouteMap";
-import { GAUGE_CONFIG, UNIT_MULTIPLIERS } from "@/constants/speed";
+import { GAUGE_CONFIG, UNITS, UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useSettings from "@/contexts/SettingsContext";
@@ -23,7 +23,7 @@ const REPLAY_STEP = 2;
 const REPLAY_INTERVAL_MS = 80;
 
 /** The map needs a beat to draw tiles before it is worth photographing. */
-const SNAPSHOT_DELAY_MS = 1200;
+const SNAPSHOT_DELAY_MS = 1800;
 
 const MODE_NAMES = {
   Car: "Car",
@@ -170,11 +170,11 @@ export default function TripSummary() {
   ];
 
   const details = [
-    {
-      label: `Average ${unit}`,
-      value: Math.round(trip.avgSpeed * multiplier).toString(),
-    },
     { label: "Moving time", value: formatDuration(trip.movingMs) },
+    {
+      label: "Stopped time",
+      value: formatDuration(Math.max(trip.durationMs - trip.movingMs, 0)),
+    },
     { label: "Pace", value: formatPace(trip.distanceM, trip.movingMs) },
     { label: "Elevation gain", value: `${trip.elevationGainM} m` },
     { label: "Max altitude", value: `${trip.maxAltitudeM} m` },
@@ -215,8 +215,10 @@ export default function TripSummary() {
       >
         <View style={styles.identity}>
           <Text style={styles.date}>{formatFullDate(trip.startedAt)}</Text>
-          <Text style={styles.route} numberOfLines={2}>
-            {trip.startAddress} → {trip.endAddress}
+          <Text style={styles.route} numberOfLines={3}>
+            <Text style={{ color: colors.routeStart }}>{trip.startAddress}</Text>
+            <Text style={styles.routeJoin}> To </Text>
+            <Text style={{ color: colors.routeEnd }}>{trip.endAddress}</Text>
           </Text>
           <Text style={styles.window}>
             {formatClockTime(trip.startedAt)} – {formatClockTime(trip.endedAt)}
@@ -324,6 +326,55 @@ export default function TripSummary() {
           </TouchableOpacity>
         )}
 
+        <View style={styles.speedTable}>
+          <View style={styles.speedHeaderRow}>
+            <Text style={[styles.speedUnitCell, styles.speedHeadLabel]}>
+              Speed
+            </Text>
+            <Text style={[styles.speedValueCell, styles.speedHeadLabel]}>
+              Top
+            </Text>
+            <Text style={[styles.speedValueCell, styles.speedHeadLabel]}>
+              Average
+            </Text>
+          </View>
+
+          {UNITS.map((row) => {
+            const factor = UNIT_MULTIPLIERS[row];
+            const isSelected = row === unit;
+            return (
+              <View key={row} style={styles.speedRow}>
+                <Text
+                  style={[
+                    styles.speedUnitCell,
+                    isSelected && { color: gaugeColor },
+                  ]}
+                >
+                  {row.toLowerCase()}
+                </Text>
+                <Text
+                  style={[
+                    styles.speedValueCell,
+                    styles.speedFigure,
+                    isSelected && { color: gaugeColor },
+                  ]}
+                >
+                  {Math.round(trip.topSpeed * factor)}
+                </Text>
+                <Text
+                  style={[
+                    styles.speedValueCell,
+                    styles.speedFigure,
+                    isSelected && { color: gaugeColor },
+                  ]}
+                >
+                  {Math.round(trip.avgSpeed * factor)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
         <View style={styles.detailGrid}>
           {details.map((stat) => (
             <View key={stat.label} style={styles.detailCard}>
@@ -376,6 +427,7 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     letterSpacing: tracking.heading,
   },
+  routeJoin: { color: colors.textMuted, fontFamily: fonts.regular },
   window: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.regular },
   badgeRow: { flexDirection: "row", gap: 8, marginTop: 6 },
   badge: {
@@ -477,21 +529,64 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     letterSpacing: 0.8,
   },
+  speedTable: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    ...shadow.card,
+  },
+  speedHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingBottom: 10,
+    marginBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  speedRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7 },
+  speedUnitCell: {
+    flex: 1.2,
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontFamily: fonts.medium,
+  },
+  speedValueCell: {
+    flex: 1,
+    textAlign: "right",
+    color: colors.textPrimary,
+    fontSize: 14,
+    fontFamily: fonts.medium,
+  },
+  speedFigure: {
+    fontSize: 19,
+    fontFamily: fonts.semibold,
+    letterSpacing: tracking.heading,
+  },
+  speedHeadLabel: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontFamily: fonts.medium,
+    letterSpacing: 1,
+  },
   detailGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    gap: 12,
+    rowGap: 10,
   },
   detailCard: {
-    width: "31%",
+    width: "32%",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 4,
     alignItems: "center",
-    gap: 5,
+    gap: 6,
     ...shadow.card,
   },
   detailValue: {

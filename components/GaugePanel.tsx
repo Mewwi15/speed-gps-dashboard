@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -6,12 +6,20 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import CockpitClock from "@/components/CockpitClock";
-import { MODES, UNITS, UNIT_MULTIPLIERS } from "@/constants/speed";
+import {
+  formatLatitude,
+  formatLongitude,
+  MODES,
+  UNITS,
+  UNIT_MULTIPLIERS,
+} from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
+import LocationBlocked from "@/components/LocationBlocked";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
 
@@ -21,6 +29,12 @@ import useSettings from "@/contexts/SettingsContext";
  * early then sits still until the next fix, which reads as a stutter.
  */
 const SWEEP_MS = 1000;
+
+/** The face the dial was drawn against; every measurement scales from it. */
+const REFERENCE_DIAL = 326;
+
+/** Side padding the screen already reserves, plus a little breathing room. */
+const DIAL_MARGIN = 44;
 
 /**
  * Walks a readout towards its target one unit at a time. GPS fixes land about
@@ -53,9 +67,21 @@ function useCountUp(target: number, durationMs = SWEEP_MS) {
 }
 
 export default function GaugePanel() {
-  const { speed, topSpeed, avgSpeed, lat, lng, alt, address, errorMsg } =
+  const { speed, topSpeed, avgSpeed, lat, lng, alt, address, errorMsg, retryPermission } =
     useLocation();
   const { mode, unit, gaugeColor, setMode, setUnit, gauge } = useSettings();
+
+  // The dial was a fixed 326pt, which overflowed the narrowest phones and left
+  // the largest ones with wasted space. Everything inside it is derived from
+  // this one measurement instead.
+  const { width: screenWidth } = useWindowDimensions();
+  const dial = Math.min(REFERENCE_DIAL, screenWidth - DIAL_MARGIN);
+  const scale = dial / REFERENCE_DIAL;
+  const px = useCallback(
+    (value: number) => Math.round(value * scale),
+    [scale],
+  );
+  const centre = dial / 2;
 
   const currentMultiplier = UNIT_MULTIPLIERS[unit];
   const displaySpeed = Math.round(speed * currentMultiplier);
@@ -111,7 +137,7 @@ export default function GaugePanel() {
           key={`t${i}`}
           style={[
             styles.tickWrapper,
-            { transform: [{ rotate: `${angle}deg` }] },
+            { width: dial, height: dial, transform: [{ rotate: `${angle}deg` }] },
           ]}
         >
           <View
@@ -119,7 +145,7 @@ export default function GaugePanel() {
               styles.tick,
               {
                 width: isMajor ? 3.5 : 1.5,
-                height: isMajor ? 16 : 8,
+                height: px(isMajor ? 16 : 8),
                 backgroundColor: color,
                 shadowColor: isActive ? color : "transparent",
                 shadowOpacity: isActive ? 0.9 : 0,
@@ -131,7 +157,7 @@ export default function GaugePanel() {
       );
     }
     return items;
-  }, [max, tick, num, redline, litTicks, gaugeColor]);
+  }, [max, tick, num, redline, litTicks, gaugeColor, px, dial]);
 
   const numerals = useMemo(() => {
     const items = [];
@@ -147,17 +173,22 @@ export default function GaugePanel() {
           ? colors.textPrimary
           : colors.textMuted;
 
-      let angleRad = (-135 + (i * 270) / max - 90) * (Math.PI / 180);
-      let radius = 126;
-      let x = radius * Math.cos(angleRad);
-      let y = radius * Math.sin(angleRad);
+      const angleRad = (-135 + (i * 270) / max - 90) * (Math.PI / 180);
+      const ringRadius = centre * 0.775;
+      const x = ringRadius * Math.cos(angleRad);
+      const y = ringRadius * Math.sin(angleRad);
 
       items.push(
         <Text
           key={`n${i}`}
           style={[
             styles.numText,
-            { color: color, left: 170 + x - 18, top: 170 + y - 10 },
+            {
+              color,
+              left: centre + x - 18,
+              top: centre + y - 10,
+              fontSize: px(14),
+            },
           ]}
         >
           {i}
@@ -165,7 +196,7 @@ export default function GaugePanel() {
       );
     }
     return items;
-  }, [max, num, redline, climbingSpeed]);
+  }, [max, num, redline, climbingSpeed, centre, px]);
 
   return (
     <ScrollView
@@ -174,9 +205,11 @@ export default function GaugePanel() {
       >
 
         {errorMsg ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{errorMsg}</Text>
-          </View>
+          <LocationBlocked
+            message={errorMsg}
+            accent={gaugeColor}
+            onRetry={retryPermission}
+          />
         ) : (
           <>
             <View
@@ -189,9 +222,23 @@ export default function GaugePanel() {
 
             <View style={styles.gaugeContainer}>
               <View
-                style={[styles.outerBezel, { borderColor: `${gaugeColor}15` }]}
+                style={[
+                  styles.outerBezel,
+                  {
+                    borderColor: `${gaugeColor}15`,
+                    width: dial + 20,
+                    height: dial + 20,
+                    borderRadius: (dial + 20) / 2,
+                    borderWidth: px(8),
+                  },
+                ]}
               >
-                <View style={styles.innerBezel}>
+                <View
+                  style={[
+                    styles.innerBezel,
+                    { width: dial, height: dial, borderRadius: centre },
+                  ]}
+                >
                   <View style={StyleSheet.absoluteFill}>{ticks}</View>
                   <View style={StyleSheet.absoluteFill}>{numerals}</View>
 
@@ -199,7 +246,11 @@ export default function GaugePanel() {
                     <View
                       style={[
                         styles.peakMarkerWrapper,
-                        { transform: [{ rotate: `${peakAngle}deg` }] },
+                        {
+                          width: dial,
+                          height: dial,
+                          transform: [{ rotate: `${peakAngle}deg` }],
+                        },
                       ]}
                     >
                       <View style={styles.peakMarker} />
@@ -247,13 +298,19 @@ export default function GaugePanel() {
                   <Animated.View
                     style={[
                       styles.needleWrapper,
-                      { transform: [{ rotate: needleRotation }] },
+                      {
+                        width: dial,
+                        height: dial,
+                        transform: [{ rotate: needleRotation }],
+                      },
                     ]}
                   >
                     <View
                       style={[
                         styles.needleBody,
                         {
+                          height: px(135),
+                          transform: [{ translateY: px(-50) }],
                           backgroundColor: isCurrentRedline
                             ? colors.danger
                             : gaugeColor,
@@ -266,7 +323,12 @@ export default function GaugePanel() {
                     <View style={styles.needleCounterWeight} />
                   </Animated.View>
 
-                  <View style={styles.centerCap}>
+                  <View
+                    style={[
+                      styles.centerCap,
+                      { top: centre - px(22), left: centre - px(22) },
+                    ]}
+                  >
                     <View
                       style={[
                         styles.centerCapCore,
@@ -317,8 +379,8 @@ export default function GaugePanel() {
                 <View style={styles.cardHeader}>
                   <Text style={styles.statLabel}>POSITION</Text>
                 </View>
-                <Text style={styles.statCoords}>{lat.toFixed(4)}° N</Text>
-                <Text style={styles.statCoords}>{lng.toFixed(4)}° E</Text>
+                <Text style={styles.statCoords}>{formatLatitude(lat)}</Text>
+                <Text style={styles.statCoords}>{formatLongitude(lng)}</Text>
               </View>
             </View>
 
@@ -481,19 +543,15 @@ const styles = StyleSheet.create({
     marginBottom: 26,
   },
   outerBezel: {
-    width: 346,
-    height: 346,
-    borderRadius: 173,
+
     backgroundColor: colors.bgRaised,
-    borderWidth: 8,
+
     alignItems: "center",
     justifyContent: "center",
     ...shadow.gauge,
   },
   innerBezel: {
-    width: 326,
-    height: 326,
-    borderRadius: 163,
+
     backgroundColor: colors.bgRaised,
     borderWidth: 2,
     borderColor: colors.border,
@@ -501,8 +559,7 @@ const styles = StyleSheet.create({
   },
   tickWrapper: {
     position: "absolute",
-    width: 326,
-    height: 326,
+
     alignItems: "center",
   },
   tick: {
@@ -511,8 +568,7 @@ const styles = StyleSheet.create({
   },
   peakMarkerWrapper: {
     position: "absolute",
-    width: 326,
-    height: 326,
+
     alignItems: "center",
   },
   peakMarker: {
@@ -572,15 +628,13 @@ const styles = StyleSheet.create({
   },
   needleWrapper: {
     position: "absolute",
-    width: 326,
-    height: 326,
+
     justifyContent: "center",
     alignItems: "center",
   },
   needleBody: {
     width: 4,
-    height: 135,
-    transform: [{ translateY: -50 }],
+
     borderRadius: radius.pill,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
@@ -602,8 +656,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 3,
     borderColor: colors.surfaceHigh,
-    top: 141,
-    left: 141,
+
     justifyContent: "center",
     alignItems: "center",
     ...shadow.card,
@@ -793,21 +846,5 @@ const styles = StyleSheet.create({
     height: 9,
     borderRadius: radius.pill,
     backgroundColor: "#ffffff",
-  },
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 18,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    width: "100%",
-  },
-  errorText: {
-    fontFamily: fonts.semibold,
-    color: colors.danger,
-    fontSize: 14,
   },
 });

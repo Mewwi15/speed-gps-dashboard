@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GaugePanel from "@/components/GaugePanel";
+import LocationBlocked from "@/components/LocationBlocked";
 import RouteMap from "@/components/RouteMap";
 import ThrottleSlider from "@/components/ThrottleSlider";
 import { ACCENT_DEFAULT, colors, radius, shadow } from "@/constants/theme";
@@ -55,6 +56,7 @@ export default function Home() {
     path,
     isDemo,
     setDemo,
+    retryPermission,
     demoMode,
     setDemoMode,
     manualSpeed,
@@ -180,10 +182,11 @@ export default function Home() {
           <GaugePanel />
         ) : errorMsg ? (
           <View style={styles.mapError}>
-            <Text style={styles.mapErrorTitle}>{errorMsg}</Text>
-            <Text style={styles.mapErrorBody}>
-              Location access is needed to draw your route.
-            </Text>
+            <LocationBlocked
+              message={errorMsg}
+              accent={gaugeColor}
+              onRetry={retryPermission}
+            />
           </View>
         ) : (
           <View style={styles.mapHolder}>
@@ -218,6 +221,26 @@ export default function Home() {
             </View>
           </View>
         )}
+
+        <TouchableOpacity
+          style={[
+            styles.demoButton,
+            isDemo
+              ? { backgroundColor: `${gaugeColor}1f`, borderColor: gaugeColor }
+              : { borderColor: colors.borderStrong },
+          ]}
+          onPress={() => setDemo(!isDemo)}
+          activeOpacity={0.85}
+        >
+          <Text
+            style={[
+              styles.demoButtonText,
+              { color: isDemo ? gaugeColor : colors.textSecondary },
+            ]}
+          >
+            {isDemo ? "Stop demo" : "Start demo"}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[
@@ -530,13 +553,6 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 32,
   },
-  mapErrorTitle: {
-    fontFamily: fonts.semibold,
-    color: colors.danger,
-    fontSize: 15,
-    letterSpacing: 1,
-  },
-  mapErrorBody: { color: colors.textMuted, fontSize: 13, textAlign: "center" },
   recBar: {
     paddingHorizontal: 18,
     paddingTop: 14,
@@ -566,6 +582,14 @@ const styles = StyleSheet.create({
     fontSize: 19,
     letterSpacing: tracking.heading,
   },
+  demoButton: {
+    height: 46,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  demoButtonText: { fontSize: 15, fontFamily: fonts.medium },
   recButton: {
     flexDirection: "row",
     alignItems: "center",

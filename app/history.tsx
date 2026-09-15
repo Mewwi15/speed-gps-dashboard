@@ -55,7 +55,11 @@ export default function History() {
           <View style={styles.cardTitleBlock}>
             <Text style={styles.cardWhen}>{formatWhen(item.startedAt)}</Text>
             <Text style={styles.cardRoute} numberOfLines={1}>
-              {item.startAddress} → {item.endAddress}
+              <Text style={{ color: colors.routeStart }}>
+                {item.startAddress}
+              </Text>
+              <Text style={styles.routeJoin}> To </Text>
+              <Text style={{ color: colors.routeEnd }}>{item.endAddress}</Text>
             </Text>
           </View>
         </View>
@@ -221,6 +225,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     backgroundColor: colors.surfaceAlt,
   },
+  routeJoin: { color: colors.textMuted },
   cardStats: {
     flexDirection: "row",
     alignItems: "center",

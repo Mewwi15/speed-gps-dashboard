@@ -21,6 +21,10 @@ export const colors = {
   textSecondary: "#c4b9a9",
   textMuted: "#8a7f70",
 
+  /** Start and finish of a route, used by both the map pins and the summary. */
+  routeStart: "#3ddc84",
+  routeEnd: "#ff5c4d",
+
   danger: "#ff3b30",
   dangerDim: "#5c231d",
   warning: "#ffc53d",

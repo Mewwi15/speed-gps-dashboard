@@ -15,6 +15,9 @@ import type { TrackPoint } from "@/contexts/LocationContext";
 
 const DEFAULT_DELTA = 0.004;
 
+/** Diameter of the start and finish dots, in points. */
+const ENDPOINT_DOT = 18;
+
 type Segment = { color: string; coordinates: TrackPoint[] };
 
 /**
@@ -164,24 +167,36 @@ function RouteMap(
         ))}
 
         {start && (
-          <Marker coordinate={start} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={[styles.endpoint, styles.startPin]}>
-              <Text style={styles.endpointLabel}>A</Text>
-            </View>
-          </Marker>
+          <Polyline
+            coordinates={[
+              start,
+              { latitude: start.latitude + 1e-6, longitude: start.longitude },
+            ]}
+            strokeColor={colors.routeStart}
+            strokeWidth={ENDPOINT_DOT}
+            lineCap="round"
+            zIndex={5}
+          />
         )}
 
         {end && !live && (
-          <Marker coordinate={end} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={[styles.endpoint, styles.endPin]}>
-              <Text style={styles.endpointLabel}>B</Text>
-            </View>
-          </Marker>
+          <Polyline
+            coordinates={[
+              end,
+              { latitude: end.latitude + 1e-6, longitude: end.longitude },
+            ]}
+            strokeColor={colors.routeEnd}
+            strokeWidth={ENDPOINT_DOT}
+            lineCap="round"
+            zIndex={5}
+          />
         )}
 
         {scrubPoint && (
           <Marker coordinate={scrubPoint} anchor={{ x: 0.5, y: 0.5 }} flat>
-            <View style={[styles.scrubDot, { backgroundColor: accent }]} />
+            <View style={styles.markerCanvas}>
+              <View style={[styles.scrubDot, { backgroundColor: accent }]} />
+            </View>
           </Marker>
         )}
 
@@ -193,6 +208,7 @@ function RouteMap(
           >
             <View
               style={[
+                styles.markerCanvas,
                 styles.headingWrapper,
                 live.heading >= 0 && {
                   transform: [{ rotate: `${live.heading}deg` }],
@@ -238,6 +254,12 @@ export default forwardRef(RouteMap);
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: colors.bg, overflow: "hidden" },
+  markerCanvas: {
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+  },
   meDot: {
     width: 16,
     height: 16,
@@ -265,18 +287,6 @@ const styles = StyleSheet.create({
     borderRightColor: "transparent",
     opacity: 0.9,
   },
-  endpoint: {
-    width: 26,
-    height: 26,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#ffffff",
-  },
-  startPin: { backgroundColor: "#22c55e" },
-  endPin: { backgroundColor: colors.danger },
-  endpointLabel: { color: "#ffffff", fontSize: 13, fontFamily: fonts.bold },
   legend: {
     position: "absolute",
     left: 12,
