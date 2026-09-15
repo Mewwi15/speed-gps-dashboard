@@ -7,6 +7,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 import { colors, radius } from "@/constants/theme";
+import { fonts, tracking } from "@/constants/typography";
 
 type Props = {
   value: number;
@@ -54,7 +55,7 @@ export default function ThrottleSlider({
   return (
     <View style={styles.wrapper}>
       <View style={styles.headerRow}>
-        <Text style={styles.label}>THROTTLE</Text>
+        <Text style={styles.label}>Throttle</Text>
         <Text style={[styles.readout, { color: accent }]}>
           {value}
           <Text style={styles.readoutUnit}> {unit}</Text>
@@ -117,15 +118,19 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.8,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 0,
   },
-  readout: { fontSize: 20, fontWeight: "900", fontStyle: "italic" },
+  readout: {
+    fontSize: 22,
+    fontFamily: fonts.bold,
+    letterSpacing: tracking.display,
+  },
   readoutUnit: {
     color: colors.textMuted,
     fontSize: 10,
-    fontWeight: "700",
+    fontFamily: fonts.medium,
   },
   track: { height: 34, justifyContent: "center" },
   trackBase: {
@@ -154,7 +159,7 @@ const styles = StyleSheet.create({
   scaleLabel: {
     color: colors.textMuted,
     fontSize: 9,
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     letterSpacing: 0.8,
   },
 });

@@ -1,8 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { speedColor, speedLegend } from "@/constants/speed";
 import { colors, radius } from "@/constants/theme";
+import { fonts } from "@/constants/typography";
 import type { TrackPoint } from "@/contexts/LocationContext";
 
 const DEFAULT_DELTA = 0.004;
@@ -39,17 +47,28 @@ type Props = {
   /** Pins the whole route on first render instead of following a live fix. */
   fitToRoute?: boolean;
   showLegend?: boolean;
+  /** Called once the route has been framed, so a snapshot can be taken. */
+  onRouteFramed?: () => void;
 };
 
-export default function RouteMap({
-  points,
-  gaugeMax,
-  accent,
-  live = null,
-  scrubPoint = null,
-  fitToRoute = false,
-  showLegend = true,
-}: Props) {
+export type RouteMapHandle = {
+  /** Renders the current map to a PNG and resolves its temporary file URI. */
+  capture: () => Promise<string | null>;
+};
+
+function RouteMap(
+  {
+    points,
+    gaugeMax,
+    accent,
+    live = null,
+    scrubPoint = null,
+    fitToRoute = false,
+    showLegend = true,
+    onRouteFramed,
+  }: Props,
+  ref: React.Ref<RouteMapHandle>,
+) {
   const mapRef = useRef<MapView>(null);
   const [isFollowing, setFollowing] = useState(!fitToRoute);
   const hasFitted = useRef(false);
@@ -59,6 +78,21 @@ export default function RouteMap({
     [points, gaugeMax],
   );
   const legend = useMemo(() => speedLegend(gaugeMax), [gaugeMax]);
+
+  useImperativeHandle(ref, () => ({
+    capture: async () => {
+      if (!mapRef.current) return null;
+      try {
+        return await mapRef.current.takeSnapshot({
+          format: "png",
+          quality: 0.9,
+          result: "file",
+        });
+      } catch {
+        return null;
+      }
+    },
+  }));
 
   const start = points.length > 0 ? points[0] : null;
   const end = points.length > 1 ? points[points.length - 1] : null;
@@ -70,10 +104,11 @@ export default function RouteMap({
       return;
     hasFitted.current = true;
     mapRef.current.fitToCoordinates(points, {
-      edgePadding: { top: 90, right: 60, bottom: 130, left: 60 },
+      edgePadding: { top: 60, right: 50, bottom: 70, left: 50 },
       animated: false,
     });
-  }, [fitToRoute, points]);
+    onRouteFramed?.();
+  }, [fitToRoute, points, onRouteFramed]);
 
   useEffect(() => {
     if (fitToRoute || !isFollowing || !live || !mapRef.current) return;
@@ -192,12 +227,14 @@ export default function RouteMap({
           onPress={recenter}
           activeOpacity={0.8}
         >
-          <Text style={[styles.recenterText, { color: accent }]}>RECENTER</Text>
+          <Text style={[styles.recenterText, { color: accent }]}>Recenter</Text>
         </TouchableOpacity>
       )}
     </View>
   );
 }
+
+export default forwardRef(RouteMap);
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1, backgroundColor: colors.bg, overflow: "hidden" },
@@ -239,11 +276,13 @@ const styles = StyleSheet.create({
   },
   startPin: { backgroundColor: "#22c55e" },
   endPin: { backgroundColor: colors.danger },
-  endpointLabel: { color: "#ffffff", fontSize: 12, fontWeight: "900" },
+  endpointLabel: { color: "#ffffff", fontSize: 13, fontFamily: fonts.bold },
   legend: {
     position: "absolute",
     left: 12,
-    bottom: 12,
+    // Sits at the top: the provider attribution lives in the bottom-left
+    // corner and has to stay legible, and a short map leaves no room below.
+    top: 12,
     flexDirection: "row",
     backgroundColor: "rgba(22,31,52,0.92)",
     borderRadius: radius.md,
@@ -255,7 +294,7 @@ const styles = StyleSheet.create({
   },
   legendEntry: { alignItems: "center", gap: 3 },
   legendSwatch: { width: 16, height: 4, borderRadius: radius.pill },
-  legendLabel: { color: colors.textMuted, fontSize: 9, fontWeight: "700" },
+  legendLabel: { color: colors.textMuted, fontSize: 10, fontFamily: fonts.medium },
   recenter: {
     position: "absolute",
     right: 12,
@@ -269,5 +308,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     paddingHorizontal: 14,
   },
-  recenterText: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  recenterText: {
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    letterSpacing: 0,
+  },
 });

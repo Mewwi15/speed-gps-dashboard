@@ -1,4 +1,4 @@
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Modal,
@@ -12,6 +12,7 @@ import GaugePanel from "@/components/GaugePanel";
 import RouteMap from "@/components/RouteMap";
 import ThrottleSlider from "@/components/ThrottleSlider";
 import { ACCENT_DEFAULT, colors, radius, shadow } from "@/constants/theme";
+import { fonts, tracking } from "@/constants/typography";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
 import useTrips from "@/contexts/TripsContext";
@@ -44,6 +45,7 @@ function formatDistance(metres: number) {
 
 export default function Home() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const {
     lat,
     lng,
@@ -108,7 +110,7 @@ export default function Home() {
         <View style={styles.topActions}>
           <Link href="/history" asChild>
             <TouchableOpacity style={styles.textButton} activeOpacity={0.7}>
-              <Text style={styles.textButtonLabel}>TRIPS</Text>
+              <Text style={styles.textButtonLabel}>Trips</Text>
             </TouchableOpacity>
           </Link>
 
@@ -118,7 +120,7 @@ export default function Home() {
             activeOpacity={0.7}
           >
             <Text style={[styles.textButtonLabel, { color: gaugeColor }]}>
-              THEME
+              Theme
             </Text>
           </TouchableOpacity>
         </View>
@@ -129,7 +131,7 @@ export default function Home() {
           const isActive = viewMode === option;
           return (
             <TouchableOpacity
-              key={option}
+              key={option === "GAUGE" ? "Gauge" : "Map"}
               style={[
                 styles.toggleOption,
                 isActive && [
@@ -146,7 +148,7 @@ export default function Home() {
                   { color: isActive ? gaugeColor : colors.textMuted },
                 ]}
               >
-                {option}
+                {option === "GAUGE" ? "Gauge" : "Map"}
               </Text>
             </TouchableOpacity>
           );
@@ -157,8 +159,8 @@ export default function Home() {
         <View style={[styles.demoBanner, { borderColor: `${gaugeColor}55` }]}>
           <Text style={[styles.demoBannerText, { color: gaugeColor }]}>
             {demoMode === "manual"
-              ? "MANUAL DEMO — SIMULATED DATA"
-              : "DEMO DRIVE — SIMULATED DATA"}
+              ? "Manual demo · simulated data"
+              : "Demo drive · simulated data"}
           </Text>
         </View>
       )}
@@ -226,7 +228,11 @@ export default function Home() {
           ]}
           onPress={() => {
             if (isRecording) {
-              stopRecording();
+              stopRecording().then((tripId) => {
+                if (tripId) {
+                  router.push({ pathname: "/trip/[id]", params: { id: tripId } });
+                }
+              });
             } else {
               startRecording();
               setViewMode("MAP");
@@ -241,7 +247,7 @@ export default function Home() {
               { color: isRecording ? "#ffffff" : colors.bg },
             ]}
           >
-            {isRecording ? "STOP & SAVE" : "START RECORDING"}
+            {isRecording ? "Stop & save" : "Start recording"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -251,22 +257,22 @@ export default function Home() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
               <View>
-                <Text style={styles.modalTitle}>SETTINGS</Text>
+                <Text style={styles.modalTitle}>Settings</Text>
                 <Text style={styles.modalSubtitle}>
-                  COCKPIT APPEARANCE AND DEMO
+                  Cockpit appearance and demo
                 </Text>
               </View>
               <TouchableOpacity
                 style={styles.modalClose}
                 onPress={() => setPaletteOpen(false)}
               >
-                <Text style={styles.modalCloseLabel}>CLOSE</Text>
+                <Text style={styles.modalCloseLabel}>Close</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.demoRow}>
               <View style={styles.demoCopy}>
-                <Text style={styles.demoTitle}>DEMO DRIVE</Text>
+                <Text style={styles.demoTitle}>Demo drive</Text>
                 <Text style={styles.demoBody}>
                   Feeds the app simulated fixes so the gauge and route can be
                   shown without driving. Street names stay in English.
@@ -288,7 +294,7 @@ export default function Home() {
                     { color: isDemo ? colors.bg : colors.textSecondary },
                   ]}
                 >
-                  {isDemo ? "ON" : "OFF"}
+                  {isDemo ? "On" : "Off"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -320,7 +326,7 @@ export default function Home() {
                           },
                         ]}
                       >
-                        {option === "auto" ? "SCRIPTED RUN" : "DRIVE BY HAND"}
+                        {option === "auto" ? "Scripted run" : "Drive by hand"}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -328,7 +334,7 @@ export default function Home() {
               </View>
             )}
 
-            <Text style={styles.sectionLabel}>ACCENT PALETTE</Text>
+            <Text style={styles.sectionLabel}>Accent palette</Text>
             <View style={styles.paletteGrid}>
               {ACCENT_COLORS.map((color) => (
                 <TouchableOpacity
@@ -371,17 +377,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   brandTitle: {
-    fontWeight: "900",
-    fontStyle: "italic",
-    fontSize: 24,
+    fontFamily: fonts.bold,
+    fontSize: 25,
     color: colors.textPrimary,
-    letterSpacing: 2.4,
+    letterSpacing: -0.8,
   },
   brandSubtitle: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     fontSize: 9,
     color: colors.textMuted,
-    letterSpacing: 3.4,
+    letterSpacing: 1,
     marginTop: 1,
   },
   topActions: { flexDirection: "row", gap: 10 },
@@ -396,16 +401,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   textButtonLabel: {
-    fontWeight: "900",
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
-    fontSize: 11,
-    letterSpacing: 1.6,
+    fontSize: 13,
+    letterSpacing: 0,
   },
   modalCloseLabel: {
-    fontWeight: "900",
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
-    fontSize: 10,
-    letterSpacing: 1.4,
+    fontSize: 12,
+    letterSpacing: 0,
   },
   demoBanner: {
     marginHorizontal: 18,
@@ -416,9 +421,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   demoBannerText: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.8,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+    letterSpacing: 0,
   },
   demoRow: {
     flexDirection: "row",
@@ -432,9 +437,9 @@ const styles = StyleSheet.create({
   demoCopy: { flex: 1, gap: 5 },
   demoTitle: {
     color: colors.textPrimary,
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.6,
+    fontSize: 14,
+    fontFamily: fonts.semibold,
+    letterSpacing: 0,
   },
   demoBody: {
     color: colors.textMuted,
@@ -449,9 +454,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   demoToggleText: {
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.4,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    letterSpacing: 0,
   },
   demoModeRow: {
     flexDirection: "row",
@@ -470,15 +475,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   demoModeLabel: {
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.2,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+    letterSpacing: 0,
   },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1.8,
+    fontFamily: fonts.bold,
+    letterSpacing: 1,
     marginBottom: 14,
   },
   toggle: {
@@ -504,7 +509,11 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   toggleOptionActive: { backgroundColor: colors.surfaceHigh },
-  toggleLabel: { fontSize: 12, fontWeight: "900", letterSpacing: 1.6 },
+  toggleLabel: {
+    fontSize: 13,
+    fontFamily: fonts.semibold,
+    letterSpacing: tracking.heading,
+  },
   content: { flex: 1 },
   mapHolder: {
     flex: 1,
@@ -522,10 +531,10 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   mapErrorTitle: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.danger,
     fontSize: 15,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   mapErrorBody: { color: colors.textMuted, fontSize: 13, textAlign: "center" },
   recBar: {
@@ -546,17 +555,17 @@ const styles = StyleSheet.create({
   recStat: { flex: 1, alignItems: "center", gap: 3 },
   recStatDivider: { width: 1, height: 28, backgroundColor: colors.border },
   recStatLabel: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
     fontSize: 9,
-    letterSpacing: 1.3,
+    letterSpacing: 1,
   },
   recStatValue: {
-    fontWeight: "900",
-    fontFamily: "monospace",
+    fontFamily: fonts.semibold,
     color: colors.textPrimary,
-    fontSize: 17,
-      },
+    fontSize: 19,
+    letterSpacing: tracking.heading,
+  },
   recButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -567,7 +576,11 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   recButtonActive: { backgroundColor: colors.danger },
-  recButtonText: { fontSize: 14, fontWeight: "900", letterSpacing: 1.6 },
+  recButtonText: {
+    fontSize: 16,
+    fontFamily: fonts.semibold,
+    letterSpacing: 0,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(6,10,20,0.88)",
@@ -590,13 +603,13 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   modalTitle: {
-    fontWeight: "900",
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
-    fontSize: 15,
-    letterSpacing: 2,
+    fontSize: 18,
+    letterSpacing: tracking.heading,
   },
   modalSubtitle: {
-    fontWeight: "700",
+    fontFamily: fonts.medium,
     color: colors.textMuted,
     fontSize: 9.5,
     letterSpacing: 1,

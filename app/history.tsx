@@ -1,8 +1,16 @@
 import { Link, useRouter } from "expo-router";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
+import { fonts, tracking } from "@/constants/typography";
 import useSettings from "@/contexts/SettingsContext";
 import useTrips, { type TripSummary } from "@/contexts/TripsContext";
 
@@ -42,44 +50,51 @@ export default function History() {
       <TouchableOpacity style={styles.card} activeOpacity={0.85}>
         <View style={styles.cardTop}>
           <Text style={[styles.modeTag, { color: gaugeColor }]}>
-            {item.mode.toUpperCase()}
+            {item.mode}
           </Text>
           <View style={styles.cardTitleBlock}>
             <Text style={styles.cardWhen}>{formatWhen(item.startedAt)}</Text>
             <Text style={styles.cardRoute} numberOfLines={1}>
-              {item.startAddress.toUpperCase()} →{" "}
-              {item.endAddress.toUpperCase()}
+              {item.startAddress} → {item.endAddress}
             </Text>
           </View>
         </View>
+
+        {item.snapshotUri && (
+          <Image
+            source={{ uri: item.snapshotUri }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
+        )}
 
         <View style={styles.cardStats}>
           <View style={styles.stat}>
             <Text style={styles.statValue}>
               {formatDistance(item.distanceM)}
             </Text>
-            <Text style={styles.statLabel}>DISTANCE</Text>
+            <Text style={styles.statLabel}>Distance</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statValue}>
               {formatDuration(item.durationMs)}
             </Text>
-            <Text style={styles.statLabel}>TIME</Text>
+            <Text style={styles.statLabel}>Time</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statValue}>
               {Math.round(item.topSpeed * multiplier)}
             </Text>
-            <Text style={styles.statLabel}>TOP {unit}</Text>
+            <Text style={styles.statLabel}>Top {unit}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statValue}>
               {Math.round(item.avgSpeed * multiplier)}
             </Text>
-            <Text style={styles.statLabel}>AVG {unit}</Text>
+            <Text style={styles.statLabel}>Avg {unit}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -94,12 +109,12 @@ export default function History() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <Text style={styles.backLabel}>BACK</Text>
+          <Text style={styles.backLabel}>Back</Text>
         </TouchableOpacity>
         <View>
-          <Text style={styles.headerTitle}>TRIP HISTORY</Text>
+          <Text style={styles.headerTitle}>Trip history</Text>
           <Text style={styles.headerSubtitle}>
-            {trips.length} SAVED {trips.length === 1 ? "TRIP" : "TRIPS"}
+            {trips.length} saved {trips.length === 1 ? "trip" : "trips"}
           </Text>
         </View>
       </View>
@@ -110,9 +125,9 @@ export default function History() {
         </View>
       ) : trips.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>NO TRIPS YET</Text>
+          <Text style={styles.emptyTitle}>No trips yet</Text>
           <Text style={styles.emptyBody}>
-            Tap START RECORDING on the cockpit, then ride. Your route and speeds
+            Tap Start recording on the cockpit, then ride. Your route and speeds
             are saved here when you stop.
           </Text>
         </View>
@@ -142,15 +157,15 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   backLabel: {
-    fontWeight: "900",
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
-    fontSize: 11,
-    letterSpacing: 1.6,
+    fontSize: 13,
+    letterSpacing: 0,
   },
   modeTag: {
-    fontWeight: "900",
-    fontSize: 11,
-    letterSpacing: 1.4,
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 0,
     minWidth: 46,
   },
   backButton: {
@@ -164,16 +179,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   headerTitle: {
-    fontWeight: "900",
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
-    fontSize: 19,
-    letterSpacing: 2,
+    fontSize: 22,
+    letterSpacing: tracking.heading,
   },
   headerSubtitle: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
     fontSize: 9.5,
-    letterSpacing: 2,
+    letterSpacing: 1,
     marginTop: 2,
   },
   list: { paddingHorizontal: 18, gap: 12 },
@@ -188,16 +203,23 @@ const styles = StyleSheet.create({
   cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   cardTitleBlock: { flex: 1, gap: 3 },
   cardWhen: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textPrimary,
-    fontSize: 14,
-    letterSpacing: 0.8,
+    fontSize: 15,
+    letterSpacing: 0,
   },
   cardRoute: {
-    fontWeight: "700",
+    fontFamily: fonts.regular,
     color: colors.textMuted,
-    fontSize: 10.5,
-    letterSpacing: 0.6,
+    fontSize: 12,
+    letterSpacing: 0,
+  },
+  thumbnail: {
+    width: "100%",
+    height: 120,
+    borderRadius: radius.md,
+    marginTop: 14,
+    backgroundColor: colors.surfaceAlt,
   },
   cardStats: {
     flexDirection: "row",
@@ -210,13 +232,13 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: "center", gap: 3 },
   statDivider: { width: 1, height: 26, backgroundColor: colors.border },
   statValue: {
-    fontWeight: "900",
-    fontStyle: "italic",
+    fontFamily: fonts.semibold,
     color: colors.textPrimary,
-    fontSize: 15,
+    fontSize: 17,
+    letterSpacing: tracking.heading,
   },
   statLabel: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
     fontSize: 8.5,
     letterSpacing: 1,
@@ -229,10 +251,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 44,
   },
   emptyTitle: {
-    fontWeight: "900",
+    fontFamily: fonts.semibold,
     color: colors.textSecondary,
-    fontSize: 14,
-    letterSpacing: 2,
+    fontSize: 17,
+    letterSpacing: tracking.heading,
   },
   emptyBody: {
     color: colors.textMuted,

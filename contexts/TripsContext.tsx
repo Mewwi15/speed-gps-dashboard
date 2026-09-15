@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Directory, File, Paths } from "expo-file-system";
 import {
   createContext,
   useCallback,
@@ -28,6 +29,12 @@ export type TripSummary = {
   avgSpeed: number;
   /** Metres climbed, summing only the positive altitude changes. */
   elevationGainM: number;
+  /** Highest point reached, in metres. */
+  maxAltitudeM: number;
+  /** Milliseconds spent actually moving, as opposed to stopped. */
+  movingMs: number;
+  /** Saved snapshot of the route, written on first viewing. */
+  snapshotUri?: string;
   mode: Mode;
   startAddress: string;
   endAddress: string;
@@ -49,7 +56,12 @@ type TripsValue = {
   stopRecording: () => Promise<string | null>;
   loadTrip: (id: string) => Promise<Trip | null>;
   deleteTrip: (id: string) => Promise<void>;
+  /** Stores a rendered map image against a trip, keeping it out of the cache. */
+  attachSnapshot: (id: string, temporaryUri: string) => Promise<string | null>;
 };
+
+/** Where route images live, safe from the OS clearing the cache. */
+const SNAPSHOT_DIR = "trip-maps";
 
 const INDEX_KEY = "speedgps.trips.index.v1";
 const tripKey = (id: string) => `speedgps.trip.${id}.v1`;
@@ -72,18 +84,23 @@ function summarise(points: TrackPoint[]) {
   let movingSum = 0;
   let movingCount = 0;
   let elevationGainM = 0;
+  let maxAltitudeM = points.length > 0 ? points[0].altitude : 0;
+  let movingMs = 0;
 
   for (let i = 0; i < points.length; i += 1) {
     const point = points[i];
     if (point.speed > topSpeed) topSpeed = point.speed;
+    if (point.altitude > maxAltitudeM) maxAltitudeM = point.altitude;
     if (point.speed > 0) {
       movingSum += point.speed;
       movingCount += 1;
     }
     if (i > 0) {
-      distanceM += metresBetween(points[i - 1], point);
-      const climb = point.altitude - points[i - 1].altitude;
+      const previous = points[i - 1];
+      distanceM += metresBetween(previous, point);
+      const climb = point.altitude - previous.altitude;
       if (climb > 0) elevationGainM += climb;
+      if (point.speed > 0) movingMs += Math.max(point.t - previous.t, 0);
     }
   }
 
@@ -92,6 +109,8 @@ function summarise(points: TrackPoint[]) {
     topSpeed,
     avgSpeed: movingCount > 0 ? Math.round(movingSum / movingCount) : 0,
     elevationGainM: Math.round(elevationGainM),
+    maxAltitudeM,
+    movingMs,
   };
 }
 
@@ -202,6 +221,41 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const attachSnapshot = useCallback(
+    async (id: string, temporaryUri: string) => {
+      try {
+        const folder = new Directory(Paths.document, SNAPSHOT_DIR);
+        if (!folder.exists) folder.create({ intermediates: true });
+
+        const source = new File(temporaryUri);
+        const destination = new File(folder, `${id}.png`);
+        if (destination.exists) destination.delete();
+        source.move(destination);
+
+        const uri = destination.uri;
+        const nextIndex = trips.map((trip) =>
+          trip.id === id ? { ...trip, snapshotUri: uri } : trip,
+        );
+        setTrips(nextIndex);
+        await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(nextIndex));
+
+        const raw = await AsyncStorage.getItem(tripKey(id));
+        if (raw) {
+          const trip = JSON.parse(raw) as Trip;
+          await AsyncStorage.setItem(
+            tripKey(id),
+            JSON.stringify({ ...trip, snapshotUri: uri }),
+          );
+        }
+        return uri;
+      } catch {
+        // A missing image is cosmetic; the trip itself is already saved.
+        return null;
+      }
+    },
+    [trips],
+  );
+
   const deleteTrip = useCallback(
     async (id: string) => {
       const nextIndex = trips.filter((trip) => trip.id !== id);
@@ -209,6 +263,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       try {
         await AsyncStorage.removeItem(tripKey(id));
         await AsyncStorage.setItem(INDEX_KEY, JSON.stringify(nextIndex));
+        const image = new File(Paths.document, SNAPSHOT_DIR, `${id}.png`);
+        if (image.exists) image.delete();
       } catch {}
     },
     [trips],
@@ -225,6 +281,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       stopRecording,
       loadTrip,
       deleteTrip,
+      attachSnapshot,
     }),
     [
       isRecording,
@@ -236,6 +293,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       stopRecording,
       loadTrip,
       deleteTrip,
+      attachSnapshot,
     ],
   );
 

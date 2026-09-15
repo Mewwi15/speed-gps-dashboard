@@ -11,6 +11,7 @@ import {
 import CockpitClock from "@/components/CockpitClock";
 import { MODES, UNITS, UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
+import { fonts, tracking } from "@/constants/typography";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
 
@@ -182,7 +183,7 @@ export default function GaugePanel() {
               style={[styles.addressBadge, { borderColor: `${gaugeColor}25` }]}
             >
               <Text style={styles.addressText} numberOfLines={1}>
-                {address.toUpperCase()}
+                {address}
               </Text>
             </View>
 
@@ -347,7 +348,7 @@ export default function GaugePanel() {
                             { color: isActive ? gaugeColor : colors.textMuted },
                           ]}
                         >
-                          {m.id.toUpperCase()}
+                          {m.id}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -425,17 +426,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   headerTitle: {
-    fontWeight: "900",
-    fontStyle: "italic",
+    fontFamily: fonts.bold,
     fontSize: 26,
     color: colors.textPrimary,
-    letterSpacing: 2.5,
+    letterSpacing: tracking.heading,
   },
   headerSubtitle: {
     fontSize: 9.5,
     color: colors.textMuted,
-    fontWeight: "800",
-    letterSpacing: 3.6,
+    fontFamily: fonts.semibold,
+    letterSpacing: 1,
     marginTop: 1,
   },
   paletteLauncher: {
@@ -470,9 +470,9 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   addressText: {
-    fontWeight: "700",
-    fontSize: 13,
-    letterSpacing: 1.3,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    letterSpacing: tracking.heading,
     color: colors.textSecondary,
   },
   gaugeContainer: {
@@ -531,8 +531,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
   },
   numText: {
-    fontWeight: "900",
-    fontStyle: "italic",
+    fontFamily: fonts.bold,
     position: "absolute",
     width: 36,
     height: 20,
@@ -552,11 +551,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   digitalSpeedText: {
-    fontWeight: "900",
-    fontStyle: "italic",
-    fontSize: 48,
+    fontFamily: fonts.bold,
+    fontSize: 52,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 16,
+    letterSpacing: -2.5,
   },
   speedUnitBadge: {
     backgroundColor: colors.surfaceAlt,
@@ -567,9 +566,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   digitalSpeedUnit: {
-    fontWeight: "900",
+    fontFamily: fonts.bold,
     fontSize: 10,
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   needleWrapper: {
     position: "absolute",
@@ -638,15 +637,15 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   modeBtnText: {
-    fontWeight: "900",
-    fontSize: 12,
-    letterSpacing: 1.4,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    letterSpacing: 0,
   },
   statLabel: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textSecondary,
     fontSize: 10,
-    letterSpacing: 1.4,
+    letterSpacing: 1,
   },
   statValueRow: {
     flexDirection: "row",
@@ -654,20 +653,19 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   statValue: {
-    fontWeight: "900",
-    fontStyle: "italic",
+    fontFamily: fonts.bold,
     color: colors.textPrimary,
-    fontSize: 24,
+    fontSize: 26,
+    letterSpacing: tracking.display,
   },
   statCoords: {
-    fontWeight: "700",
-    fontFamily: "monospace",
+    fontFamily: fonts.medium,
     color: colors.textSecondary,
     fontSize: 12.5,
         letterSpacing: 0.4,
   },
   unitSmall: {
-    fontWeight: "700",
+    fontFamily: fonts.medium,
     fontSize: 11,
     color: colors.textMuted,
   },
@@ -684,10 +682,10 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   dockHeader: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.textMuted,
     fontSize: 9.5,
-    letterSpacing: 1.4,
+    letterSpacing: 1,
     marginBottom: 14,
   },
   dockRow: {
@@ -728,10 +726,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceHigh,
   },
   unitBtnText: {
-    fontWeight: "900",
+    fontFamily: fonts.medium,
     color: colors.textMuted,
-    fontSize: 12,
-    letterSpacing: 1,
+    fontSize: 13,
+    letterSpacing: 0,
   },
   modalOverlay: {
     flex: 1,
@@ -758,13 +756,13 @@ const styles = StyleSheet.create({
   modalTitle: {
     color: colors.textPrimary,
     fontSize: 15,
-    fontWeight: "900",
-    letterSpacing: 2,
+    fontFamily: fonts.bold,
+    letterSpacing: 1,
   },
   modalSubTitle: {
     color: colors.textMuted,
     fontSize: 9.5,
-    fontWeight: "700",
+    fontFamily: fonts.medium,
     letterSpacing: 1,
     marginTop: 3,
   },
@@ -808,7 +806,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   errorText: {
-    fontWeight: "800",
+    fontFamily: fonts.semibold,
     color: colors.danger,
     fontSize: 14,
   },

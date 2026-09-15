@@ -1,6 +1,7 @@
 import { memo, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { colors, radius } from "@/constants/theme";
+import { fonts } from "@/constants/typography";
 
 function formatTime(date: Date) {
   const h = date.getHours().toString().padStart(2, "0");
@@ -52,18 +53,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   date: {
-    fontWeight: "700",
-    fontFamily: "monospace",
+    fontFamily: fonts.medium,
     color: colors.textMuted,
     fontSize: 9.5,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     marginBottom: 2,
   },
   time: {
-    fontWeight: "800",
-    fontFamily: "monospace",
+    fontFamily: fonts.semibold,
     color: colors.textPrimary,
     fontSize: 17,
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
 });
