@@ -68,6 +68,9 @@ export const ROUTE_START = {
   longitude: DEMO_ROUTE[0][1],
 };
 
+/** The road the demo opens on, so the street readout never shows a real one. */
+export const ROUTE_START_LABEL = DEMO_ROUTE[0][3];
+
 /** Binary search for the segment containing a distance along the route. */
 function segmentAt(distanceM: number) {
   let low = 0;

@@ -266,7 +266,11 @@ const styles = StyleSheet.create({
   },
   thumbnail: { width: "100%", height: "100%" },
   thumbScrim: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: "rgba(20,21,24,0.28)",
   },
   cardBody: { flex: 1, justifyContent: "center", gap: 5 },

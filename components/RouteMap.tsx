@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -120,16 +121,28 @@ function RouteMap(
 
   const initialPoint = live ?? start;
 
-  useEffect(() => {
-    if (!fitToRoute || hasFitted.current || points.length < 2 || !mapRef.current)
-      return;
-    hasFitted.current = true;
+  /**
+   * Frame the whole route. Safe to call on every layout, and deliberately so:
+   * a MapView inside a ScrollView is re-laid out as the page scrolls, and it
+   * can come back centred on 0,0 — mid-ocean, so the map reads as a blank blue
+   * square. Re-framing is what puts the route back.
+   */
+  const frameRoute = useCallback(() => {
+    if (!fitToRoute || !mapRef.current || points.length < 2) return;
     mapRef.current.fitToCoordinates(points, {
       edgePadding: { top: 60, right: 50, bottom: 70, left: 50 },
       animated: false,
     });
-    onRouteFramed?.();
+    if (!hasFitted.current) {
+      hasFitted.current = true;
+      onRouteFramed?.();
+    }
   }, [fitToRoute, points, onRouteFramed]);
+
+  useEffect(() => {
+    if (!fitToRoute) return;
+    frameRoute();
+  }, [fitToRoute, frameRoute]);
 
   useEffect(() => {
     if (fitToRoute || !isFollowing || !live || !mapRef.current) return;
@@ -156,6 +169,14 @@ function RouteMap(
     );
   };
 
+  // Never mount the map without a real centre. A saved trip arrives from
+  // storage a frame after this renders, and an initialRegion of 0,0 drops the
+  // camera in the Atlantic — the blank blue square, again.
+
+  if (!initialPoint) {
+    return <View style={styles.wrapper} />;
+  }
+
   return (
     <View style={styles.wrapper}>
       <MapView
@@ -172,6 +193,13 @@ function RouteMap(
         showsMyLocationButton={false}
         toolbarEnabled={false}
         onPanDrag={() => setFollowing(false)}
+        // Always a real function. MapView spreads the caller's props over its
+        // own defaults, so passing undefined here overwrites the library's
+        // handler with nil — and the native side calls that block without a
+        // nil check, which segfaults the moment the map starts rendering.
+        // frameRoute is the one that decides whether there is work to do.
+        onMapReady={frameRoute}
+        onLayout={frameRoute}
       >
         {segments.map((segment, index) => (
           <Polyline

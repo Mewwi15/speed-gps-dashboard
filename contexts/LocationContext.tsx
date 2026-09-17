@@ -15,6 +15,7 @@ import {
   createDriveState,
   DEMO_TICK_MS,
   ROUTE_START,
+  ROUTE_START_LABEL,
   stepDrive,
   type DriveState,
 } from "@/constants/demoDrive";
@@ -327,7 +328,17 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       // leaving it wherever the last real fix was.
       setLat(ROUTE_START.latitude);
       setLng(ROUTE_START.longitude);
+      // The street readout is the one piece of state a real fix leaves behind.
+      // Without this the first second of a demo — and any trip started inside
+      // it — is stamped with wherever the phone actually is.
+      setAddress(ROUTE_START_LABEL);
+      latestPosition.current = ROUTE_START;
       setHasFix(true);
+    } else {
+      // Back to real GPS: drop the scripted street so the next fix re-geocodes
+      // instead of leaving a Bangkok road name over the user's own location.
+      setAddress("Locating…");
+      lastGeocodeTime.current = 0;
     }
     setIsDemo(on);
   }, []);
