@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { computeLevel, computeStats, computeXp } from "@/constants/achievements";
+import { EMPTY_TRIPS_ART } from "@/constants/badgeArt";
 import { UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
@@ -163,6 +164,11 @@ export default function History() {
         </View>
       ) : trips.length === 0 ? (
         <View style={styles.empty}>
+          <Image
+            source={EMPTY_TRIPS_ART}
+            style={styles.emptyArt}
+            resizeMode="contain"
+          />
           <Text style={styles.emptyTitle}>No trips yet</Text>
           <Text style={styles.emptyBody}>
             Tap Start recording on the cockpit, then ride. Your route and speeds
@@ -315,6 +321,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 44,
   },
+  emptyArt: { width: 180, height: 180, opacity: 0.8, marginBottom: 4 },
   emptyTitle: {
     fontFamily: fonts.semibold,
     color: colors.textSecondary,

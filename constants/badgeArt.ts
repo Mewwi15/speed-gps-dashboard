@@ -1,0 +1,20 @@
+import type { ImageSourcePropType } from "react-native";
+
+/**
+ * Artwork per achievement. Metro resolves require() at build time, so these
+ * have to be written out one by one rather than built from the id; the upside
+ * is that a missing file fails the build loudly instead of rendering a blank
+ * tile on someone's phone.
+ */
+export const BADGE_ART: Record<string, ImageSourcePropType> = {
+  "first-drive": require("@/assets/badges/first-drive.png"),
+  "ten-trips": require("@/assets/badges/ten-trips.png"),
+  explorer: require("@/assets/badges/explorer.png"),
+  "road-warrior": require("@/assets/badges/road-warrior.png"),
+  century: require("@/assets/badges/century.png"),
+  smooth: require("@/assets/badges/smooth.png"),
+  endurance: require("@/assets/badges/endurance.png"),
+  "night-rider": require("@/assets/badges/night-rider.png"),
+};
+
+export const EMPTY_TRIPS_ART: ImageSourcePropType = require("@/assets/illustrations/empty-trips.png");

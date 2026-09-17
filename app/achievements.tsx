@@ -1,6 +1,13 @@
 import { useRouter } from "expo-router";
 import { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ACHIEVEMENTS,
@@ -8,6 +15,7 @@ import {
   computeStats,
   computeXp,
 } from "@/constants/achievements";
+import { BADGE_ART } from "@/constants/badgeArt";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useSettings from "@/contexts/SettingsContext";
@@ -89,50 +97,64 @@ export default function Achievements() {
 
         <Text style={styles.sectionLabel}>Earned from your trips</Text>
 
-        {ACHIEVEMENTS.map((achievement) => {
-          const { current, target } = achievement.measure(stats);
-          const isDone = current >= target;
-          const progress = Math.min(current / target, 1);
+        <View style={styles.badgeGrid}>
+          {ACHIEVEMENTS.map((achievement) => {
+            const { current, target } = achievement.measure(stats);
+            const isDone = current >= target;
+            const progress = Math.min(current / target, 1);
 
-          return (
-            <View
-              key={achievement.id}
-              style={[
-                styles.badge,
-                isDone && { borderColor: `${gaugeColor}66` },
-              ]}
-            >
-              <View style={styles.badgeTop}>
+            return (
+              <View
+                key={achievement.id}
+                style={[
+                  styles.badge,
+                  isDone
+                    ? { borderColor: `${gaugeColor}66` }
+                    : { borderColor: colors.border },
+                ]}
+              >
+                <Image
+                  source={BADGE_ART[achievement.id]}
+                  style={[styles.badgeArt, !isDone && styles.badgeArtLocked]}
+                  resizeMode="contain"
+                />
+
                 <Text
                   style={[
                     styles.badgeTitle,
                     isDone ? { color: gaugeColor } : undefined,
                   ]}
+                  numberOfLines={1}
                 >
                   {achievement.title}
                 </Text>
+
+                <Text style={styles.badgeDetail} numberOfLines={2}>
+                  {achievement.detail}
+                </Text>
+
+                <View style={styles.badgeTrack}>
+                  <View
+                    style={[
+                      styles.badgeFill,
+                      {
+                        width: `${progress * 100}%`,
+                        backgroundColor: isDone
+                          ? gaugeColor
+                          : colors.surfaceHigh,
+                      },
+                    ]}
+                  />
+                </View>
+
                 <Text style={styles.badgeCount}>
                   {achievement.format(Math.min(current, target))} /{" "}
                   {achievement.format(target)}
                 </Text>
               </View>
-
-              <Text style={styles.badgeDetail}>{achievement.detail}</Text>
-
-              <View style={styles.badgeTrack}>
-                <View
-                  style={[
-                    styles.badgeFill,
-                    {
-                      width: `${progress * 100}%`,
-                      backgroundColor: isDone ? gaugeColor : colors.surfaceHigh,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
@@ -222,35 +244,45 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     marginTop: 8,
   },
+  badgeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 12,
+  },
   badge: {
+    width: "48.5%",
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
+    borderWidth: 1.5,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    alignItems: "center",
     gap: 8,
   },
-  badgeTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "baseline",
-  },
+  badgeArt: { width: 72, height: 72, marginBottom: 2 },
+  badgeArtLocked: { opacity: 0.22 },
   badgeTitle: {
     color: colors.textPrimary,
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: fonts.semibold,
-  },
-  badgeCount: {
-    color: colors.textMuted,
-    fontSize: 12,
-    fontFamily: fonts.regular,
+    textAlign: "center",
   },
   badgeDetail: {
     color: colors.textMuted,
-    fontSize: 13,
+    fontSize: 11.5,
     fontFamily: fonts.regular,
+    textAlign: "center",
+    lineHeight: 16,
+    minHeight: 32,
+  },
+  badgeCount: {
+    color: colors.textSecondary,
+    fontSize: 12,
+    fontFamily: fonts.medium,
   },
   badgeTrack: {
+    width: "100%",
     height: 6,
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt,
