@@ -1,4 +1,5 @@
 import { Link, useRouter } from "expo-router";
+import { useMemo } from "react";
 import {
   FlatList,
   Image,
@@ -8,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { computeLevel, computeStats, computeXp } from "@/constants/achievements";
 import { UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
@@ -44,6 +46,11 @@ export default function History() {
   const { trips, isLoading } = useTrips();
   const { unit, gaugeColor } = useSettings();
   const multiplier = UNIT_MULTIPLIERS[unit];
+
+  const level = useMemo(() => {
+    const stats = computeStats(trips);
+    return computeLevel(computeXp(stats, trips));
+  }, [trips]);
 
   const renderTrip = ({ item }: { item: TripSummary }) => (
     <Link href={{ pathname: "/trip/[id]", params: { id: item.id } }} asChild>
@@ -110,7 +117,9 @@ export default function History() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/")
+          }
           activeOpacity={0.7}
         >
           <Text style={styles.backLabel}>Back</Text>
@@ -122,6 +131,31 @@ export default function History() {
           </Text>
         </View>
       </View>
+
+      <Link href="/achievements" asChild>
+        <TouchableOpacity
+          style={[styles.levelCard, { borderColor: `${gaugeColor}55` }]}
+          activeOpacity={0.85}
+        >
+          <View style={styles.levelCopy}>
+            <Text style={styles.levelLabel}>
+              Level {level.level} · {level.title}
+            </Text>
+            <View style={styles.levelTrack}>
+              <View
+                style={[
+                  styles.levelFill,
+                  {
+                    width: `${level.progress * 100}%`,
+                    backgroundColor: gaugeColor,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+          <Text style={[styles.levelCta, { color: gaugeColor }]}>Progress</Text>
+        </TouchableOpacity>
+      </Link>
 
       {isLoading ? (
         <View style={styles.empty}>
@@ -195,6 +229,32 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     marginTop: 2,
   },
+  levelCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    marginHorizontal: 18,
+    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+  },
+  levelCopy: { flex: 1, gap: 10 },
+  levelLabel: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fonts.semibold,
+  },
+  levelTrack: {
+    height: 8,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceAlt,
+    overflow: "hidden",
+  },
+  levelFill: { height: 8, borderRadius: radius.pill },
+  levelCta: { fontSize: 13, fontFamily: fonts.medium },
   list: { paddingHorizontal: 18, gap: 12 },
   card: {
     backgroundColor: colors.surface,

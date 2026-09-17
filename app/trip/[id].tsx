@@ -145,7 +145,9 @@ export default function TripSummary() {
     return (
       <View style={[styles.wrapper, styles.centred, { paddingTop: insets.top }]}>
         <Text style={styles.muted}>This trip could not be loaded.</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/history")
+          }>
           <Text style={[styles.link, { color: gaugeColor }]}>Go back</Text>
         </TouchableOpacity>
       </View>
@@ -194,7 +196,9 @@ export default function TripSummary() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={() => router.back()}
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/history")
+          }
           activeOpacity={0.7}
         >
           <Text style={styles.headerButtonLabel}>Done</Text>
@@ -204,7 +208,8 @@ export default function TripSummary() {
           style={styles.headerButton}
           onPress={async () => {
             await deleteTrip(trip.id);
-            router.back();
+            if (router.canGoBack()) router.back();
+            else router.replace("/history");
           }}
           activeOpacity={0.7}
         >
