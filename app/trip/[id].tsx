@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RouteMap, { type RouteMapHandle } from "@/components/RouteMap";
+import SpeedChart from "@/components/SpeedChart";
 import { GAUGE_CONFIG, UNITS, UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
@@ -160,6 +161,13 @@ export default function TripSummary() {
     setCursor(Math.round(ratio * (trip.points.length - 1)));
   };
 
+  const scoreTone =
+    trip.driveScore >= 85
+      ? colors.routeStart
+      : trip.driveScore >= 65
+        ? colors.warning
+        : colors.routeEnd;
+
   const headline = [
     { label: "Distance", value: formatDistance(trip.distanceM) },
     { label: "Total time", value: formatDuration(trip.durationMs) },
@@ -252,6 +260,27 @@ export default function TripSummary() {
           ))}
         </View>
 
+        <View style={[styles.scoreCard, { borderColor: `${scoreTone}55` }]}>
+          <View style={styles.scoreLeft}>
+            <Text style={[styles.scoreValue, { color: scoreTone }]}>
+              {trip.driveScore}
+            </Text>
+            <Text style={styles.scoreOutOf}>/ 100</Text>
+          </View>
+          <View style={styles.scoreCopy}>
+            <Text style={styles.scoreTitle}>Drive score</Text>
+            <Text style={styles.scoreDetail}>
+              {trip.harshAccelerations === 0 && trip.harshBrakes === 0
+                ? "Smooth throughout — no harsh acceleration or braking."
+                : `${trip.harshBrakes} harsh brake${
+                    trip.harshBrakes === 1 ? "" : "s"
+                  }, ${trip.harshAccelerations} hard acceleration${
+                    trip.harshAccelerations === 1 ? "" : "s"
+                  }.`}
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.mapHolder}>
           {trip.snapshotUri && !isReviewing ? (
             <Image
@@ -265,6 +294,7 @@ export default function TripSummary() {
               points={trip.points}
               gaugeMax={gaugeMax}
               accent={gaugeColor}
+              events={trip.events}
               scrubPoint={isReviewing ? scrubPoint : null}
               fitToRoute
               showLegend={isReviewing}
@@ -325,6 +355,13 @@ export default function TripSummary() {
             </Text>
           </TouchableOpacity>
         )}
+
+        <SpeedChart
+          points={trip.points}
+          gaugeMax={gaugeMax}
+          unit={unit}
+          multiplier={multiplier}
+        />
 
         <View style={styles.speedTable}>
           <View style={styles.speedHeaderRow}>
@@ -528,6 +565,40 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontFamily: fonts.semibold,
     letterSpacing: 0.8,
+  },
+  scoreCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1.5,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    ...shadow.card,
+  },
+  scoreLeft: { flexDirection: "row", alignItems: "baseline", gap: 3 },
+  scoreValue: {
+    fontSize: 42,
+    fontFamily: fonts.bold,
+    letterSpacing: tracking.display,
+  },
+  scoreOutOf: {
+    color: colors.textMuted,
+    fontSize: 13,
+    fontFamily: fonts.regular,
+  },
+  scoreCopy: { flex: 1, gap: 4 },
+  scoreTitle: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    fontFamily: fonts.semibold,
+  },
+  scoreDetail: {
+    color: colors.textMuted,
+    fontSize: 12.5,
+    fontFamily: fonts.regular,
+    lineHeight: 18,
   },
   speedTable: {
     backgroundColor: colors.surface,

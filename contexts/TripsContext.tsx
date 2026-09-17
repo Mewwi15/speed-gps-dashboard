@@ -36,13 +36,29 @@ export type TripSummary = {
   /** Saved snapshot of the route, written on first viewing. */
   snapshotUri?: string;
   mode: Mode;
+  /** 0-100, docked for each harsh acceleration and each harsh brake. */
+  driveScore: number;
+  harshAccelerations: number;
+  harshBrakes: number;
   startAddress: string;
   endAddress: string;
   /** Recorded from the scripted demo drive rather than real GPS. */
   isDemo?: boolean;
 };
 
-export type Trip = TripSummary & { points: TrackPoint[] };
+/** A moment the vehicle was pushed or pulled hard enough to notice. */
+export type DriveEvent = {
+  kind: "accel" | "brake";
+  latitude: number;
+  longitude: number;
+  /** Magnitude in m/s², always positive. */
+  force: number;
+};
+
+export type Trip = TripSummary & {
+  points: TrackPoint[];
+  events: DriveEvent[];
+};
 
 type TripsValue = {
   isRecording: boolean;
@@ -78,6 +94,16 @@ function metresBetween(a: TrackPoint, b: TrackPoint) {
   return Math.sqrt(dLat * dLat + dLng * dLng);
 }
 
+/**
+ * Thresholds in m/s². Everyday driving sits under 2.5; insurers treat anything
+ * past 3 as a harsh event, and braking harder than accelerating is both more
+ * common and more telling, so it is weighted more heavily in the score.
+ */
+const HARSH_ACCEL_MPS2 = 3;
+const HARSH_BRAKE_MPS2 = -3;
+const ACCEL_PENALTY = 6;
+const BRAKE_PENALTY = 8;
+
 function summarise(points: TrackPoint[]) {
   let distanceM = 0;
   let topSpeed = 0;
@@ -86,6 +112,9 @@ function summarise(points: TrackPoint[]) {
   let elevationGainM = 0;
   let maxAltitudeM = points.length > 0 ? points[0].altitude : 0;
   let movingMs = 0;
+  let harshAccelerations = 0;
+  let harshBrakes = 0;
+  const events: DriveEvent[] = [];
 
   for (let i = 0; i < points.length; i += 1) {
     const point = points[i];
@@ -101,8 +130,31 @@ function summarise(points: TrackPoint[]) {
       const climb = point.altitude - previous.altitude;
       if (climb > 0) elevationGainM += climb;
       if (point.speed > 0) movingMs += Math.max(point.t - previous.t, 0);
+
+      const seconds = Math.max(point.t - previous.t, 1) / 1000;
+      const accelMps2 = (point.speed - previous.speed) / 3.6 / seconds;
+      if (accelMps2 >= HARSH_ACCEL_MPS2) {
+        harshAccelerations += 1;
+        events.push({
+          kind: "accel",
+          latitude: point.latitude,
+          longitude: point.longitude,
+          force: Math.round(accelMps2 * 10) / 10,
+        });
+      } else if (accelMps2 <= HARSH_BRAKE_MPS2) {
+        harshBrakes += 1;
+        events.push({
+          kind: "brake",
+          latitude: point.latitude,
+          longitude: point.longitude,
+          force: Math.round(Math.abs(accelMps2) * 10) / 10,
+        });
+      }
     }
   }
+
+  const penalty =
+    harshAccelerations * ACCEL_PENALTY + harshBrakes * BRAKE_PENALTY;
 
   return {
     distanceM,
@@ -111,6 +163,10 @@ function summarise(points: TrackPoint[]) {
     elevationGainM: Math.round(elevationGainM),
     maxAltitudeM,
     movingMs,
+    harshAccelerations,
+    harshBrakes,
+    driveScore: Math.max(0, Math.min(100, 100 - penalty)),
+    events,
   };
 }
 
@@ -184,6 +240,9 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     }
 
     const endedAt = Date.now();
+    const measured = summarise(points);
+    const { events, ...summaryFields } = measured;
+
     const summary: TripSummary = {
       id: `${startedAt}`,
       startedAt,
@@ -193,10 +252,10 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       startAddress: startAddress.current || "Unknown",
       endAddress: latestAddress.current || "Unknown",
       isDemo: wasDemo.current,
-      ...summarise(points),
+      ...summaryFields,
     };
 
-    const trip: Trip = { ...summary, points };
+    const trip: Trip = { ...summary, points, events };
     const nextIndex = [summary, ...trips];
 
     try {

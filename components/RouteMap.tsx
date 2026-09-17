@@ -12,11 +12,15 @@ import { speedColor, speedLegend } from "@/constants/speed";
 import { colors, radius } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 import type { TrackPoint } from "@/contexts/LocationContext";
+import type { DriveEvent } from "@/contexts/TripsContext";
 
 const DEFAULT_DELTA = 0.004;
 
 /** Diameter of the start and finish dots, in points. */
 const ENDPOINT_DOT = 18;
+
+/** Diameter of a harsh-driving marker, in points. */
+const EVENT_DOT = 11;
 
 type Segment = { color: string; coordinates: TrackPoint[] };
 
@@ -47,6 +51,8 @@ type Props = {
   live?: { latitude: number; longitude: number; heading: number } | null;
   /** Marker dragged along the route when reviewing a saved trip. */
   scrubPoint?: TrackPoint | null;
+  /** Harsh acceleration and braking, marked along the route. */
+  events?: DriveEvent[];
   /** Pins the whole route on first render instead of following a live fix. */
   fitToRoute?: boolean;
   showLegend?: boolean;
@@ -66,6 +72,7 @@ function RouteMap(
     accent,
     live = null,
     scrubPoint = null,
+    events = [],
     fitToRoute = false,
     showLegend = true,
     onRouteFramed,
@@ -191,6 +198,25 @@ function RouteMap(
             zIndex={5}
           />
         )}
+
+        {events.map((event, index) => (
+          <Polyline
+            key={`event-${index}`}
+            coordinates={[
+              { latitude: event.latitude, longitude: event.longitude },
+              {
+                latitude: event.latitude + 1e-6,
+                longitude: event.longitude,
+              },
+            ]}
+            strokeColor={
+              event.kind === "brake" ? colors.routeEnd : colors.warning
+            }
+            strokeWidth={EVENT_DOT}
+            lineCap="round"
+            zIndex={4}
+          />
+        ))}
 
         {scrubPoint && (
           <Marker coordinate={scrubPoint} anchor={{ x: 0.5, y: 0.5 }} flat>
