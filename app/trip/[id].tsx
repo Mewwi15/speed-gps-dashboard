@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -13,6 +14,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RouteMap, { type RouteMapHandle } from "@/components/RouteMap";
 import SpeedChart from "@/components/SpeedChart";
+import { MASCOT } from "@/constants/badgeArt";
 import { GAUGE_CONFIG, UNITS, UNIT_MULTIPLIERS } from "@/constants/speed";
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
@@ -163,6 +165,16 @@ export default function TripSummary() {
     setCursor(Math.round(ratio * (trip.points.length - 1)));
   };
 
+  // A finished trip deserves a reaction, not just a table of numbers.
+  const praise =
+    trip.driveScore >= 95
+      ? "Beautifully smooth."
+      : trip.driveScore >= 80
+        ? "Nicely driven."
+        : trip.driveScore >= 60
+          ? "Decent run."
+          : "Room to smooth out.";
+
   const scoreTone =
     trip.driveScore >= 85
       ? colors.routeStart
@@ -203,14 +215,27 @@ export default function TripSummary() {
         >
           <Text style={styles.headerButtonLabel}>Done</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Trip summary</Text>
+        <Text style={styles.headerTitle}>Your trip</Text>
         <TouchableOpacity
           style={styles.headerButton}
-          onPress={async () => {
-            await deleteTrip(trip.id);
-            if (router.canGoBack()) router.back();
-            else router.replace("/history");
-          }}
+          onPress={() =>
+            Alert.alert(
+              "Delete this trip?",
+              "The route and everything recorded with it will be gone for good.",
+              [
+                { text: "Keep it", style: "cancel" },
+                {
+                  text: "Delete",
+                  style: "destructive",
+                  onPress: async () => {
+                    await deleteTrip(trip.id);
+                    if (router.canGoBack()) router.back();
+                    else router.replace("/history");
+                  },
+                },
+              ],
+            )
+          }
           activeOpacity={0.7}
         >
           <Text style={[styles.headerButtonLabel, { color: colors.danger }]}>
@@ -272,8 +297,9 @@ export default function TripSummary() {
             </Text>
             <Text style={styles.scoreOutOf}>/ 100</Text>
           </View>
+          <Image source={MASCOT.cheer} style={styles.scoreMascot} resizeMode="contain" />
           <View style={styles.scoreCopy}>
-            <Text style={styles.scoreTitle}>Drive score</Text>
+            <Text style={styles.scoreTitle}>{praise}</Text>
             <Text style={styles.scoreDetail}>
               {trip.harshAccelerations === 0 && trip.harshBrakes === 0
                 ? "Smooth throughout — no harsh acceleration or braking."
@@ -348,7 +374,7 @@ export default function TripSummary() {
           </View>
         ) : (
           <TouchableOpacity
-            style={[styles.reviewButton, { borderColor: `${gaugeColor}55` }]}
+            style={styles.reviewButton}
             onPress={() => {
               setReviewing(true);
               setCursor(0);
@@ -454,8 +480,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     letterSpacing: tracking.heading,
   },
-  scroll: { paddingHorizontal: 18, gap: 16 },
-  identity: { gap: 6 },
+  scroll: { paddingHorizontal: 18, gap: 11 },
+  identity: { gap: 4, marginBottom: 2 },
   date: {
     color: colors.textMuted,
     fontSize: 12,
@@ -471,7 +497,7 @@ const styles = StyleSheet.create({
   },
   routeJoin: { color: colors.textMuted, fontFamily: fonts.regular },
   window: { color: colors.textMuted, fontSize: 13, fontFamily: fonts.regular },
-  badgeRow: { flexDirection: "row", gap: 8, marginTop: 6 },
+  badgeRow: { flexDirection: "row", gap: 8, marginTop: 8 },
   badge: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -509,7 +535,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   mapHolder: {
-    height: 280,
+    height: 330,
     borderRadius: radius.xl,
     overflow: "hidden",
     borderWidth: 1,
@@ -518,10 +544,9 @@ const styles = StyleSheet.create({
   },
   reviewButton: {
     alignItems: "center",
-    paddingVertical: 14,
+    paddingVertical: 15,
     borderRadius: radius.pill,
-    borderWidth: 1.5,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
   },
   reviewLabel: {
     fontSize: 14,
@@ -574,11 +599,11 @@ const styles = StyleSheet.create({
   scoreCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 12,
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
     borderWidth: 1.5,
-    paddingVertical: 18,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     ...shadow.card,
   },
@@ -593,6 +618,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fonts.regular,
   },
+  scoreMascot: { width: 52, height: 52 },
   scoreCopy: { flex: 1, gap: 4 },
   scoreTitle: {
     color: colors.textPrimary,
@@ -622,7 +648,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  speedRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7 },
+  speedRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
   speedUnitCell: {
     flex: 1.2,
     color: colors.textSecondary,
@@ -651,7 +677,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    rowGap: 10,
+    rowGap: 9,
   },
   detailCard: {
     width: "32%",
@@ -659,10 +685,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 4,
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     ...shadow.card,
   },
   detailValue: {

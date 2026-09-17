@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { speedColor } from "@/constants/speed";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 import type { TrackPoint } from "@/contexts/LocationContext";
 
@@ -85,14 +85,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 18,
+    ...shadow.card,
+    ...softEdge,
   },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
-    marginBottom: 14,
+    marginBottom: 10,
   },
   title: {
     color: colors.textPrimary,
@@ -103,14 +105,14 @@ const styles = StyleSheet.create({
   plot: {
     flexDirection: "row",
     alignItems: "flex-end",
-    height: 96,
+    height: 88,
     gap: 2,
   },
   bar: { flex: 1, borderRadius: 2, minHeight: 2 },
   axisRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 8,
+    marginTop: 6,
   },
   axisLabel: {
     color: colors.textMuted,

@@ -10,9 +10,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { computeLevel, computeStats, computeXp } from "@/constants/achievements";
-import { EMPTY_TRIPS_ART } from "@/constants/badgeArt";
+import { MASCOT } from "@/constants/badgeArt";
 import { UNIT_MULTIPLIERS } from "@/constants/speed";
-import { colors, radius, shadow } from "@/constants/theme";
+import { colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useSettings from "@/contexts/SettingsContext";
 import useTrips, { type TripSummary } from "@/contexts/TripsContext";
@@ -165,14 +165,14 @@ export default function History() {
       ) : trips.length === 0 ? (
         <View style={styles.empty}>
           <Image
-            source={EMPTY_TRIPS_ART}
+            source={MASCOT.sleep}
             style={styles.emptyArt}
             resizeMode="contain"
           />
-          <Text style={styles.emptyTitle}>No trips yet</Text>
+          <Text style={styles.emptyTitle}>Nothing recorded yet</Text>
           <Text style={styles.emptyBody}>
-            Tap Start recording on the cockpit, then ride. Your route and speeds
-            are saved here when you stop.
+            Tap Start recording on the cockpit and go for a drive. Your route
+            and speeds land here the moment you stop.
           </Text>
         </View>
       ) : (
@@ -217,8 +217,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -246,6 +244,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     paddingVertical: 16,
     paddingHorizontal: 18,
+    ...shadow.card,
+    ...softEdge,
   },
   levelCopy: { flex: 1, gap: 10 },
   levelLabel: {

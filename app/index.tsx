@@ -1,3 +1,4 @@
+import { BlurView } from "expo-blur";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -13,7 +14,7 @@ import LocationBlocked from "@/components/LocationBlocked";
 import RouteMap from "@/components/RouteMap";
 import ThrottleSlider from "@/components/ThrottleSlider";
 import { UNIT_MULTIPLIERS } from "@/constants/speed";
-import { ACCENT_DEFAULT, colors, radius, shadow } from "@/constants/theme";
+import { ACCENT_DEFAULT, colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
@@ -256,8 +257,8 @@ export default function Home() {
           style={[
             styles.demoButton,
             isDemo
-              ? { backgroundColor: `${gaugeColor}1f`, borderColor: gaugeColor }
-              : { borderColor: colors.borderStrong },
+              ? { backgroundColor: `${gaugeColor}24` }
+              : { backgroundColor: colors.surfaceAlt },
           ]}
           onPress={() => setDemo(!isDemo)}
           activeOpacity={0.85}
@@ -306,8 +307,8 @@ export default function Home() {
       </View>
 
       <Modal visible={isPaletteOpen} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <BlurView intensity={40} tint="dark" style={styles.modalOverlay}>
+          <BlurView intensity={60} tint="dark" style={styles.modalContent}>
             <View style={styles.modalHeaderRow}>
               <View>
                 <Text style={styles.modalTitle}>Settings</Text>
@@ -443,8 +444,8 @@ export default function Home() {
                 </TouchableOpacity>
               ))}
             </View>
-          </View>
-        </View>
+          </BlurView>
+        </BlurView>
       </Modal>
     </View>
   );
@@ -485,8 +486,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -509,6 +508,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     alignItems: "center",
+    ...shadow.card,
+    ...softEdge,
   },
   demoBannerText: {
     fontSize: 12,
@@ -523,6 +524,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: 16,
     marginBottom: 22,
+    ...shadow.card,
+    ...softEdge,
   },
   demoCopy: { flex: 1, gap: 5 },
   demoTitle: {
@@ -556,6 +559,8 @@ const styles = StyleSheet.create({
     padding: 4,
     marginBottom: 22,
     marginTop: -12,
+    ...shadow.card,
+    ...softEdge,
   },
   demoModeOption: {
     flex: 1,
@@ -583,6 +588,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: 4,
     marginBottom: 22,
+    ...shadow.card,
+    ...softEdge,
   },
   limitOption: {
     flex: 1,
@@ -605,10 +612,10 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     backgroundColor: colors.surface,
     borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
     padding: 4,
     gap: 4,
+    ...shadow.card,
+    ...softEdge,
   },
   toggleOption: {
     flex: 1,
@@ -675,9 +682,10 @@ const styles = StyleSheet.create({
   demoButton: {
     height: 46,
     borderRadius: radius.pill,
-    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    ...shadow.card,
+    ...softEdge,
   },
   demoButtonText: { fontSize: 15, fontFamily: fonts.medium },
   recButton: {
@@ -697,18 +705,21 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(6,10,20,0.88)",
+    backgroundColor: "rgba(12,13,15,0.55)",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
   },
   modalContent: {
-    backgroundColor: colors.surface,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.06)",
     width: "100%",
     borderRadius: radius.xl,
     padding: 24,
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadow.card,
+    ...softEdge,
   },
   modalHeaderRow: {
     flexDirection: "row",

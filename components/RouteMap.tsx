@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { BlurView } from "expo-blur";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { speedColor, speedLegend } from "@/constants/speed";
 import { colors, radius } from "@/constants/theme";
@@ -251,7 +252,7 @@ function RouteMap(
       </MapView>
 
       {showLegend && (
-        <View style={styles.legend}>
+        <BlurView intensity={55} tint="dark" style={styles.legend}>
           {legend.map((entry) => (
             <View key={entry.color} style={styles.legendEntry}>
               <View
@@ -260,7 +261,7 @@ function RouteMap(
               <Text style={styles.legendLabel}>{entry.label}</Text>
             </View>
           ))}
-        </View>
+        </BlurView>
       )}
 
       {live && !isFollowing && (
@@ -320,7 +321,7 @@ const styles = StyleSheet.create({
     // corner and has to stay legible, and a short map leaves no room below.
     top: 12,
     flexDirection: "row",
-    backgroundColor: "rgba(22,31,52,0.92)",
+    overflow: "hidden",
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "rgba(22,31,52,0.94)",
+    backgroundColor: "rgba(27,28,31,0.82)",
     borderRadius: radius.pill,
     borderWidth: 1,
     paddingVertical: 9,

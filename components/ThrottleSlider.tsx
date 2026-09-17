@@ -6,7 +6,7 @@ import {
   View,
   type LayoutChangeEvent,
 } from "react-native";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 
 type Props = {
@@ -109,6 +109,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 14,
     paddingBottom: 10,
+    ...shadow.card,
+    ...softEdge,
   },
   headerRow: {
     flexDirection: "row",

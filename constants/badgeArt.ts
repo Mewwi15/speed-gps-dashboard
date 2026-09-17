@@ -18,3 +18,10 @@ export const BADGE_ART: Record<string, ImageSourcePropType> = {
 };
 
 export const EMPTY_TRIPS_ART: ImageSourcePropType = require("@/assets/illustrations/empty-trips.png");
+
+/** Mascot poses. Swap the files, keep the names. */
+export const MASCOT = {
+  hello: require("@/assets/mascot/hello.png"),
+  cheer: require("@/assets/mascot/cheer.png"),
+  sleep: require("@/assets/mascot/sleep.png"),
+} as const;

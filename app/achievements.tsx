@@ -16,7 +16,7 @@ import {
   computeXp,
 } from "@/constants/achievements";
 import { BADGE_ART } from "@/constants/badgeArt";
-import { colors, radius, shadow } from "@/constants/theme";
+import { colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useSettings from "@/contexts/SettingsContext";
 import useTrips from "@/contexts/TripsContext";
@@ -174,8 +174,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -259,6 +257,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
     gap: 8,
+    ...shadow.card,
+    ...softEdge,
   },
   badgeArt: { width: 72, height: 72, marginBottom: 2 },
   badgeArtLocked: { opacity: 0.22 },

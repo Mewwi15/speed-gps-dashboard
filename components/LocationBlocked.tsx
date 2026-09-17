@@ -1,5 +1,5 @@
 import { Linking, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { colors, radius } from "@/constants/theme";
+import { colors, radius, shadow, softEdge } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 
 type Props = {
@@ -55,6 +55,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 24,
     gap: 10,
+    ...shadow.card,
+    ...softEdge,
   },
   title: {
     color: colors.textPrimary,
