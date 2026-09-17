@@ -1,5 +1,5 @@
 import { Link, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   StyleSheet,
@@ -12,10 +12,12 @@ import GaugePanel from "@/components/GaugePanel";
 import LocationBlocked from "@/components/LocationBlocked";
 import RouteMap from "@/components/RouteMap";
 import ThrottleSlider from "@/components/ThrottleSlider";
+import { UNIT_MULTIPLIERS } from "@/constants/speed";
 import { ACCENT_DEFAULT, colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
+import useSpeedWarning from "@/components/useSpeedWarning";
 import useTrips from "@/contexts/TripsContext";
 
 const ACCENT_COLORS = [
@@ -61,8 +63,16 @@ export default function Home() {
     setDemoMode,
     manualSpeed,
     setManualSpeed,
+    speed,
   } = useLocation();
-  const { gaugeColor, setGaugeColor, gauge, unit } = useSettings();
+  const {
+    gaugeColor,
+    setGaugeColor,
+    gauge,
+    unit,
+    speedLimitKmh,
+    setSpeedLimitKmh,
+  } = useSettings();
   const {
     isRecording,
     recordingPoints,
@@ -70,6 +80,26 @@ export default function Home() {
     startRecording,
     stopRecording,
   } = useTrips();
+
+  // Limits are offered in the unit on screen but held in km/h, so switching
+  // unit does not silently move the threshold.
+  const limitChoices = useMemo(() => {
+    const factor = UNIT_MULTIPLIERS[unit];
+    const steps = [0.25, 0.4, 0.55, 0.7];
+    return steps.map((fraction) => {
+      const kmh = Math.round((gauge.max / factor) * fraction / 5) * 5;
+      return { kmh, label: `${Math.round(kmh * factor)}` };
+    });
+  }, [gauge.max, unit]);
+
+  useSpeedWarning({
+    speedKmh: speed,
+    limitKmh: speedLimitKmh,
+    spokenLimit:
+      speedLimitKmh === null
+        ? ""
+        : `${Math.round(speedLimitKmh * UNIT_MULTIPLIERS[unit])} ${unit === "KM/H" ? "kilometres per hour" : unit.toLowerCase()}`,
+  });
 
   const [viewMode, setViewMode] = useState<ViewMode>("GAUGE");
   const [isPaletteOpen, setPaletteOpen] = useState(false);
@@ -357,6 +387,43 @@ export default function Home() {
               </View>
             )}
 
+            <Text style={styles.sectionLabel}>Speed warning</Text>
+            <Text style={styles.sectionHint}>
+              Speaks and vibrates once when you cross the limit.
+            </Text>
+            <View style={styles.limitRow}>
+              {[{ kmh: null as number | null, label: "Off" }, ...limitChoices].map(
+                (choice) => {
+                  const isActive = speedLimitKmh === choice.kmh;
+                  return (
+                    <TouchableOpacity
+                      key={choice.label}
+                      style={[
+                        styles.limitOption,
+                        isActive
+                          ? {
+                              backgroundColor: colors.surfaceHigh,
+                              borderColor: gaugeColor,
+                            }
+                          : { borderColor: "transparent" },
+                      ]}
+                      onPress={() => setSpeedLimitKmh(choice.kmh)}
+                      activeOpacity={0.85}
+                    >
+                      <Text
+                        style={[
+                          styles.limitLabel,
+                          { color: isActive ? gaugeColor : colors.textMuted },
+                        ]}
+                      >
+                        {choice.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                },
+              )}
+            </View>
+
             <Text style={styles.sectionLabel}>Accent palette</Text>
             <View style={styles.paletteGrid}>
               {ACCENT_COLORS.map((color) => (
@@ -502,6 +569,29 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     letterSpacing: 0,
   },
+  sectionHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontFamily: fonts.regular,
+    marginTop: -8,
+    marginBottom: 12,
+  },
+  limitRow: {
+    flexDirection: "row",
+    gap: 6,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.lg,
+    padding: 4,
+    marginBottom: 22,
+  },
+  limitOption: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  limitLabel: { fontSize: 13, fontFamily: fonts.medium },
   sectionLabel: {
     color: colors.textMuted,
     fontSize: 10,
