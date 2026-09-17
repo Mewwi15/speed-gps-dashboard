@@ -1,50 +1,81 @@
-# Welcome to your Expo app 👋
+# SPEED GPS
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A GPS speedometer that records where you were fast, not just how fast you were.
 
-## Get started
+Built with Expo (SDK 54) and React Native for iOS.
 
-1. Install dependencies
+<p>
+  <img src="screenshot/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-09-17%20at%2008.49.04.png" width="24%" />
+  <img src="screenshot/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-09-17%20at%2008.49.15.png" width="24%" />
+  <img src="screenshot/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-09-17%20at%2008.49.19.png" width="24%" />
+  <img src="screenshot/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-09-17%20at%2008.49.25.png" width="24%" />
+</p>
 
-   ```bash
-   npm install
-   ```
+## What it does
 
-2. Start the app
+**Live cockpit** — an analogue dial driven by GPS. The needle sweeps and the
+digital readout climbs one number at a time over the same second, so the two
+never disagree. Car, motorcycle, bicycle and running each get their own scale,
+and the speed floor that filters GPS jitter follows the vehicle, so a jogger is
+not rounded down to zero.
 
-   ```bash
-   npx expo start
-   ```
+**Route recording** — start and stop a trip; the path is drawn on the map
+coloured by how fast you were on each stretch, relative to the current gauge. A
+bicycle at 50 km/h reads hot where a car at the same speed still reads cool.
 
-In the output, you'll find options to open the app in a
+**Trip summary** — distance, time, moving time, pace, elevation and top and
+average speed in all three units at once. A saved trip is a record, so it does
+not depend on which unit happened to be selected when you open it.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Drive score** — acceleration between fixes is measured in m/s². Anything past
+3 counts as harsh, the threshold used in insurance telematics, and braking is
+weighted more heavily than acceleration. Each event is kept with its position
+and drawn on the route.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+**Progress** — levels and achievements computed from the trips on the device.
+Experience comes from distance, with a bonus per trip and drive score folded in,
+so ground covered carelessly earns less than ground covered smoothly.
 
-## Get a fresh project
+**Speed warning** — set a limit and the app speaks and vibrates once as you
+cross it. It arms again only after you drop back under, so sitting just over the
+limit does not nag.
 
-When you're ready, run:
+## Demo mode
+
+Settings → Demo drive feeds the app simulated fixes so everything can be shown
+without driving.
+
+- **Scripted run** follows a real 18.9 km Bangkok route, easing towards each
+  road's typical speed — slow around the monument circle, open on the expressway
+- **Drive by hand** exposes a throttle to drag
+
+The route is committed as data, so there is no key, no network and no billing at
+runtime. A banner stays on screen throughout and every trip recorded this way is
+flagged, so simulated data is never mistaken for a real drive.
+
+## Running it
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Then open the project in Expo Go on a device on the same network, or press `i`
+for the iOS simulator.
 
-## Learn more
+```bash
+npx expo run:ios     # native build, needed for the app icon and haptics
+npx tsc --noEmit     # typecheck
+npx expo lint
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Notes
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Map labels follow the device language. For an English demo, set the device to
+  English; the app itself is English throughout.
+- Haptics only fire on a real device — the simulator has none. Speech works in
+  both.
+- The map uses whichever provider the platform supplies: Apple Maps on iOS,
+  Google Maps on Android. No API key is required.
 
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+See [AGENTS.md](AGENTS.md) for the traps worth knowing before changing the code.
