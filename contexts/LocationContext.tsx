@@ -20,6 +20,9 @@ import {
   type DriveState,
 } from "@/constants/demoDrive";
 
+/** Shown while no street name is known yet. Never saved onto a trip. */
+export const LOCATING_LABEL = "Locating…";
+
 export type TrackPoint = {
   latitude: number;
   longitude: number;
@@ -337,7 +340,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     } else {
       // Back to real GPS: drop the scripted street so the next fix re-geocodes
       // instead of leaving a Bangkok road name over the user's own location.
-      setAddress("Locating…");
+      setAddress(LOCATING_LABEL);
       lastGeocodeTime.current = 0;
     }
     setIsDemo(on);

@@ -11,7 +11,10 @@ import {
   type ReactNode,
 } from "react";
 import type { Mode } from "@/constants/speed";
-import useLocation, { type TrackPoint } from "@/contexts/LocationContext";
+import useLocation, {
+  LOCATING_LABEL,
+  type TrackPoint,
+} from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
 
 /** What the history list needs, without dragging every point into memory. */
@@ -86,6 +89,15 @@ const tripKey = (id: string) => `speedgps.trip.${id}.v1`;
 const MIN_TRIP_POINTS = 2;
 
 const TripsContext = createContext<TripsValue | null>(null);
+
+/**
+ * The placeholder is a live status, not a place. Saving it would stamp a
+ * trip with "Locating…" whenever recording crosses a fix it has not
+ * geocoded yet — most easily by leaving the demo mid-recording.
+ */
+function nameOrUnknown(label: string) {
+  return !label || label === LOCATING_LABEL ? "Unknown Road" : label;
+}
 
 function metresBetween(a: TrackPoint, b: TrackPoint) {
   const latRadians = (a.latitude * Math.PI) / 180;
@@ -207,6 +219,23 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Toggling the demo mid-recording restarts the recording. The simulated
+  // drive and the real one are different places on Earth, and a buffer that
+  // spans the switch joins them with a straight line across the ocean — tens
+  // of thousands of kilometres of "distance" that never happened. It would
+  // also keep the demo flag from the moment Start was pressed, leaving a
+  // simulated trip unmarked.
+  const previousDemo = useRef(isDemo);
+  useEffect(() => {
+    if (previousDemo.current === isDemo) return;
+    previousDemo.current = isDemo;
+    if (!isRecording) return;
+    startAddress.current = latestAddress.current;
+    wasDemo.current = isDemo;
+    setRecordingPoints([]);
+    setRecordingStartedAt(Date.now());
+  }, [isDemo, isRecording]);
+
   // Mirror new fixes into the recording buffer. The provider reads the live
   // path rather than opening its own subscription, so there is still exactly
   // one GPS watcher in the app.
@@ -249,8 +278,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
       endedAt,
       durationMs: endedAt - startedAt,
       mode,
-      startAddress: startAddress.current || "Unknown",
-      endAddress: latestAddress.current || "Unknown",
+      startAddress: nameOrUnknown(startAddress.current),
+      endAddress: nameOrUnknown(latestAddress.current),
       isDemo: wasDemo.current,
       ...summaryFields,
     };
