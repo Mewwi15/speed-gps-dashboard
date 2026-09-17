@@ -2,6 +2,7 @@ import { BlurView } from "expo-blur";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Alert,
   Modal,
   StyleSheet,
   Text,
@@ -290,7 +291,15 @@ export default function Home() {
               stopRecording().then((tripId) => {
                 if (tripId) {
                   router.push({ pathname: "/trip/[id]", params: { id: tripId } });
+                  return;
                 }
+                // Too few fixes to be a route. Saying so beats leaving the
+                // button looking broken — which is exactly how it reads when
+                // a recording is stopped where the signal never moved.
+                Alert.alert(
+                  "Nothing to save",
+                  "This recording did not move far enough to draw a route. Start again and give it a few seconds.",
+                );
               });
             } else {
               startRecording();
