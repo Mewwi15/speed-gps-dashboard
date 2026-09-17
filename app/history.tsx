@@ -56,57 +56,49 @@ export default function History() {
   const renderTrip = ({ item }: { item: TripSummary }) => (
     <Link href={{ pathname: "/trip/[id]", params: { id: item.id } }} asChild>
       <TouchableOpacity style={styles.card} activeOpacity={0.85}>
-        <View style={styles.cardTop}>
-          <Text style={[styles.modeTag, { color: gaugeColor }]}>
-            {item.mode}
-          </Text>
-          <View style={styles.cardTitleBlock}>
-            <Text style={styles.cardWhen}>{formatWhen(item.startedAt)}</Text>
-            <Text style={styles.cardRoute} numberOfLines={1}>
-              <Text style={{ color: colors.routeStart }}>
-                {item.startAddress}
-              </Text>
-              <Text style={styles.routeJoin}> To </Text>
-              <Text style={{ color: colors.routeEnd }}>{item.endAddress}</Text>
-            </Text>
-          </View>
+        <View style={styles.thumbWrap}>
+          {item.snapshotUri ? (
+            <Image
+              source={{ uri: item.snapshotUri }}
+              style={styles.thumbnail}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.thumbnail} />
+          )}
+          {/* Snapshots come out of iOS in light mode; this settles them into
+              the dark list instead of glaring out of it. */}
+          <View style={styles.thumbScrim} />
         </View>
 
-        {item.snapshotUri && (
-          <Image
-            source={{ uri: item.snapshotUri }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
-        )}
+        <View style={styles.cardBody}>
+          <Text style={styles.cardWhen}>{formatWhen(item.startedAt)}</Text>
 
-        <View style={styles.cardStats}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>
+          <Text style={styles.cardRoute} numberOfLines={2}>
+            <Text style={{ color: colors.routeStart }}>{item.startAddress}</Text>
+            <Text style={styles.routeJoin}> to </Text>
+            <Text style={{ color: colors.routeEnd }}>{item.endAddress}</Text>
+          </Text>
+
+          <View style={styles.cardStats}>
+            <Text style={styles.statText}>
               {formatDistance(item.distanceM)}
             </Text>
-            <Text style={styles.statLabel}>Distance</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>
+            <Text style={styles.statDot}>·</Text>
+            <Text style={styles.statText}>
               {formatDuration(item.durationMs)}
             </Text>
-            <Text style={styles.statLabel}>Time</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>
-              {Math.round(item.topSpeed * multiplier)}
+            <Text style={styles.statDot}>·</Text>
+            <Text style={styles.statText}>
+              {Math.round(item.topSpeed * multiplier)} {unit.toLowerCase()}
             </Text>
-            <Text style={styles.statLabel}>Top {unit}</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>
-              {Math.round(item.avgSpeed * multiplier)}
+
+          <View style={styles.cardTags}>
+            <Text style={[styles.modeTag, { color: gaugeColor }]}>
+              {item.mode}
             </Text>
-            <Text style={styles.statLabel}>Avg {unit}</Text>
+            {item.isDemo && <Text style={styles.demoTag}>Simulated</Text>}
           </View>
         </View>
       </TouchableOpacity>
@@ -134,27 +126,26 @@ export default function History() {
       </View>
 
       <Link href="/achievements" asChild>
-        <TouchableOpacity
-          style={[styles.levelCard, { borderColor: `${gaugeColor}55` }]}
-          activeOpacity={0.85}
-        >
-          <View style={styles.levelCopy}>
+        <TouchableOpacity style={styles.levelCard} activeOpacity={0.85}>
+          <View style={styles.levelTopRow}>
             <Text style={styles.levelLabel}>
               Level {level.level} · {level.title}
             </Text>
-            <View style={styles.levelTrack}>
-              <View
-                style={[
-                  styles.levelFill,
-                  {
-                    width: `${level.progress * 100}%`,
-                    backgroundColor: gaugeColor,
-                  },
-                ]}
-              />
-            </View>
+            <Text style={[styles.levelCta, { color: gaugeColor }]}>
+              See progress
+            </Text>
           </View>
-          <Text style={[styles.levelCta, { color: gaugeColor }]}>Progress</Text>
+          <View style={styles.levelTrack}>
+            <View
+              style={[
+                styles.levelFill,
+                {
+                  width: `${level.progress * 100}%`,
+                  backgroundColor: gaugeColor,
+                },
+              ]}
+            />
+          </View>
         </TouchableOpacity>
       </Link>
 
@@ -206,12 +197,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0,
   },
-  modeTag: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    letterSpacing: 0,
-    minWidth: 46,
-  },
   backButton: {
     height: 42,
     paddingHorizontal: 16,
@@ -234,25 +219,27 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   levelCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
     marginHorizontal: 18,
-    marginBottom: 16,
+    marginBottom: 14,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1.5,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 18,
+    gap: 10,
     ...shadow.card,
     ...softEdge,
   },
-  levelCopy: { flex: 1, gap: 10 },
+  levelTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   levelLabel: {
     color: colors.textPrimary,
     fontSize: 15,
     fontFamily: fonts.semibold,
   },
+  levelCta: { fontSize: 13, fontFamily: fonts.medium },
   levelTrack: {
     height: 8,
     borderRadius: radius.pill,
@@ -260,59 +247,53 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   levelFill: { height: 8, borderRadius: radius.pill },
-  levelCta: { fontSize: 13, fontFamily: fonts.medium },
-  list: { paddingHorizontal: 18, gap: 12 },
+  list: { paddingHorizontal: 18, gap: 10 },
   card: {
+    flexDirection: "row",
+    gap: 14,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
+    padding: 12,
     ...shadow.card,
+    ...softEdge,
   },
-  cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  cardTitleBlock: { flex: 1, gap: 3 },
-  cardWhen: {
-    fontFamily: fonts.semibold,
-    color: colors.textPrimary,
-    fontSize: 15,
-    letterSpacing: 0,
-  },
-  cardRoute: {
-    fontFamily: fonts.regular,
-    color: colors.textMuted,
-    fontSize: 12,
-    letterSpacing: 0,
-  },
-  thumbnail: {
-    width: "100%",
-    height: 120,
+  thumbWrap: {
+    width: 104,
+    height: 104,
     borderRadius: radius.md,
-    marginTop: 14,
+    overflow: "hidden",
     backgroundColor: colors.surfaceAlt,
   },
-  routeJoin: { color: colors.textMuted },
-  cardStats: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 14,
-    paddingTop: 14,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+  thumbnail: { width: "100%", height: "100%" },
+  thumbScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(20,21,24,0.28)",
   },
-  stat: { flex: 1, alignItems: "center", gap: 3 },
-  statDivider: { width: 1, height: 26, backgroundColor: colors.border },
-  statValue: {
-    fontFamily: fonts.semibold,
-    color: colors.textPrimary,
-    fontSize: 17,
-    letterSpacing: tracking.heading,
-  },
-  statLabel: {
-    fontFamily: fonts.semibold,
+  cardBody: { flex: 1, justifyContent: "center", gap: 5 },
+  cardWhen: {
     color: colors.textMuted,
-    fontSize: 8.5,
-    letterSpacing: 1,
+    fontSize: 12,
+    fontFamily: fonts.medium,
+  },
+  cardRoute: {
+    fontSize: 14,
+    fontFamily: fonts.semibold,
+    lineHeight: 19,
+  },
+  routeJoin: { color: colors.textMuted, fontFamily: fonts.regular },
+  cardStats: { flexDirection: "row", alignItems: "center", gap: 6 },
+  statText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    fontFamily: fonts.medium,
+  },
+  statDot: { color: colors.textMuted, fontSize: 13 },
+  cardTags: { flexDirection: "row", gap: 8, marginTop: 1 },
+  modeTag: { fontSize: 12, fontFamily: fonts.medium },
+  demoTag: {
+    color: colors.warning,
+    fontSize: 12,
+    fontFamily: fonts.medium,
   },
   empty: {
     flex: 1,
