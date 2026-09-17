@@ -25,3 +25,18 @@ export const MASCOT = {
   cheer: require("@/assets/mascot/cheer.png"),
   sleep: require("@/assets/mascot/sleep.png"),
 } as const;
+
+/** Top-down vehicle sprites for the live map marker. Nose points up. */
+export const VEHICLE_SPRITES = {
+  straight: require("@/assets/vehicle/straight.png"),
+  leanLeft: require("@/assets/vehicle/lean-left.png"),
+  leanRight: require("@/assets/vehicle/lean-right.png"),
+} as const;
+
+/** Mode buttons in the cockpit dock. */
+export const MODE_ART = {
+  Car: require("@/assets/modes/car.png"),
+  Moto: require("@/assets/modes/moto.png"),
+  Bike: require("@/assets/modes/bike.png"),
+  Run: require("@/assets/modes/run.png"),
+} as const;

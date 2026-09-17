@@ -6,19 +6,23 @@ import {
   useRef,
   useState,
 } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { BlurView } from "expo-blur";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { speedColor, speedLegend } from "@/constants/speed";
 import { colors, radius } from "@/constants/theme";
 import { fonts } from "@/constants/typography";
 import type { TrackPoint } from "@/contexts/LocationContext";
+import { VEHICLE_SPRITES } from "@/constants/badgeArt";
 import type { DriveEvent } from "@/contexts/TripsContext";
 
 const DEFAULT_DELTA = 0.004;
 
 /** Diameter of the start and finish dots, in points. */
 const ENDPOINT_DOT = 18;
+
+/** Degrees per second before the vehicle leans into the corner. */
+const LEAN_THRESHOLD_DEG = 6;
 
 /** Diameter of a harsh-driving marker, in points. */
 const EVENT_DOT = 11;
@@ -49,7 +53,13 @@ type Props = {
   gaugeMax: number;
   accent: string;
   /** Live position marker. Omit for a finished trip. */
-  live?: { latitude: number; longitude: number; heading: number } | null;
+  live?: {
+    latitude: number;
+    longitude: number;
+    heading: number;
+    /** Signed degrees per second; leans the sprite into a corner. */
+    turnRate?: number;
+  } | null;
   /** Marker dragged along the route when reviewing a saved trip. */
   scrubPoint?: TrackPoint | null;
   /** Harsh acceleration and braking, marked along the route. */
@@ -242,10 +252,17 @@ function RouteMap(
                 },
               ]}
             >
-              {live.heading >= 0 && (
-                <View style={[styles.headingCone, { borderBottomColor: accent }]} />
-              )}
-              <View style={[styles.meDot, { backgroundColor: accent }]} />
+              <Image
+                source={
+                  (live.turnRate ?? 0) < -LEAN_THRESHOLD_DEG
+                    ? VEHICLE_SPRITES.leanLeft
+                    : (live.turnRate ?? 0) > LEAN_THRESHOLD_DEG
+                      ? VEHICLE_SPRITES.leanRight
+                      : VEHICLE_SPRITES.straight
+                }
+                style={styles.vehicle}
+                resizeMode="contain"
+              />
             </View>
           </Marker>
         )}
@@ -287,13 +304,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 4,
   },
-  meDot: {
-    width: 16,
-    height: 16,
-    borderRadius: radius.pill,
-    borderWidth: 3,
-    borderColor: colors.bgRaised,
-  },
   scrubDot: {
     width: 18,
     height: 18,
@@ -302,18 +312,7 @@ const styles = StyleSheet.create({
     borderColor: "#ffffff",
   },
   headingWrapper: { alignItems: "center", justifyContent: "center" },
-  headingCone: {
-    position: "absolute",
-    top: -14,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 7,
-    borderRightWidth: 7,
-    borderBottomWidth: 14,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    opacity: 0.9,
-  },
+  vehicle: { width: 44, height: 44 },
   legend: {
     position: "absolute",
     left: 12,

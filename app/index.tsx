@@ -54,6 +54,7 @@ export default function Home() {
     lat,
     lng,
     heading,
+    turnRate,
     hasFix,
     errorMsg,
     path,
@@ -225,7 +226,11 @@ export default function Home() {
               points={mapPoints}
               gaugeMax={gauge.max}
               accent={gaugeColor}
-              live={hasFix ? { latitude: lat, longitude: lng, heading } : null}
+              live={
+                hasFix
+                  ? { latitude: lat, longitude: lng, heading, turnRate }
+                  : null
+              }
             />
           </View>
         )}

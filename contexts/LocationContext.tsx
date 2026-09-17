@@ -39,6 +39,11 @@ export type LocationValue = {
   alt: number;
   /** Degrees clockwise from true north, or -1 when the fix has no heading. */
   heading: number;
+  /**
+   * Degrees of heading change per second, signed: negative turns left. Used to
+   * lean the map marker into a corner.
+   */
+  turnRate: number;
   address: string;
   errorMsg: string | null;
   /** False until the first fix arrives, so the map does not jump to 0,0. */
@@ -107,6 +112,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const [lng, setLng] = useState<number>(0);
   const [alt, setAlt] = useState<number>(0);
   const [heading, setHeading] = useState<number>(-1);
+  const [turnRate, setTurnRate] = useState<number>(0);
   const [address, setAddress] = useState<string>("Loading...");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hasFix, setHasFix] = useState<boolean>(false);
@@ -125,6 +131,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   const distanceSoFar = useRef(0);
   const lastAppendedPoint = useRef<TrackPoint | null>(null);
   const latestPosition = useRef({ latitude: 0, longitude: 0 });
+  const previousHeading = useRef<number | null>(null);
+  const previousHeadingAt = useRef<number>(0);
   const speedFloor = useRef(SPEED_FLOOR_MPS.Car);
   speedFloor.current = SPEED_FLOOR_MPS[mode];
   const manualSpeedRef = useRef(0);
@@ -153,6 +161,18 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     setSpeed(currentSpeedKmh);
     setHeading(fix.heading);
     setHasFix(true);
+
+    // Signed shortest angle between the last heading and this one, per second.
+    if (fix.heading >= 0) {
+      const last = previousHeading.current;
+      if (last !== null) {
+        const seconds = Math.max(fix.timestamp - previousHeadingAt.current, 1) / 1000;
+        let delta = ((fix.heading - last + 540) % 360) - 180;
+        setTurnRate(delta / seconds);
+      }
+      previousHeading.current = fix.heading;
+      previousHeadingAt.current = fix.timestamp;
+    }
 
     if (currentSpeedKmh > topSpeedSoFar.current) {
       topSpeedSoFar.current = currentSpeedKmh;
@@ -321,6 +341,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       lng,
       alt,
       heading,
+      turnRate,
       address,
       errorMsg,
       hasFix,

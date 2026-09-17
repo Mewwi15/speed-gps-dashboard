@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Animated,
   Easing,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ import {
 import { colors, radius, shadow } from "@/constants/theme";
 import { fonts, tracking } from "@/constants/typography";
 import LocationBlocked from "@/components/LocationBlocked";
+import { MODE_ART } from "@/constants/badgeArt";
 import useLocation from "@/contexts/LocationContext";
 import useSettings from "@/contexts/SettingsContext";
 
@@ -404,6 +406,14 @@ export default function GaugePanel() {
                         onPress={() => setMode(m.id)}
                         activeOpacity={0.7}
                       >
+                        <Image
+                          source={MODE_ART[m.id]}
+                          style={[
+                            styles.modeArt,
+                            !isActive && styles.modeArtIdle,
+                          ]}
+                          resizeMode="contain"
+                        />
                         <Text
                           style={[
                             styles.modeBtnText,
@@ -741,9 +751,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10,
   },
+  modeArt: { width: 30, height: 30 },
+  /** Unselected modes keep their shape but step back. */
+  modeArtIdle: { opacity: 0.35 },
   modeBtn: {
     flex: 1,
-    height: 54,
+    height: 68,
+    gap: 3,
     backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md,
     justifyContent: "center",
